@@ -1,3 +1,2 @@
-circle-nodes-simple/target/
-ping-pong/target/
-random-broadcast/target/
+**/target
+**/Cargo.lock
