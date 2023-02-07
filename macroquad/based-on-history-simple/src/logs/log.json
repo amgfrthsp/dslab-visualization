@@ -1,0 +1,22 @@
+{
+  "node_cnt": 2,
+  "events": [
+    {
+      "TypeSent": {
+        "timestamp": 0.0,
+        "msg": {
+          "id": "1",
+          "from": "0",
+          "to": "1",
+          "data": "Hello"
+        }
+      }
+    },
+    {
+      "TypeReceived": {
+        "timestamp": 3.0,
+        "id": "1"
+      }
+    }
+  ]
+}
