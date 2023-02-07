@@ -91,8 +91,12 @@ impl EventController {
                         (msg.time_received - msg.time_sent) as f32,
                     );
                 }
-                ControllerStateCommand::NodeDown(id) => panic!("node down is not implemented"),
-                ControllerStateCommand::NodeUp(id) => panic!("node up is not implemented"),
+                ControllerStateCommand::NodeDown(id) => {
+                    state.process_node_down(command.0, id.to_string())
+                }
+                ControllerStateCommand::NodeUp(id) => {
+                    state.process_node_up(command.0, id.to_string())
+                }
             }
         }
     }

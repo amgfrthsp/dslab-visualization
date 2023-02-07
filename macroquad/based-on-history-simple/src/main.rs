@@ -44,25 +44,6 @@ async fn main() {
 //             data: String::from("Hello"),
 //         },
 //     }));
-//     log.events.push(Event::TypeReceived(EventReceived {
-//         timestamp: 3.0,
-//         id: String::from("1"),
-//     }));
-
-//     log.events.push(Event::TypeSent(EventSent {
-//         timestamp: 4.0,
-//         msg: Message {
-//             id: String::from("2"),
-//             from: String::from("2"),
-//             to: String::from("1"),
-//             data: String::from("Hi"),
-//         },
-//     }));
-
-//     log.events.push(Event::TypeReceived(EventReceived {
-//         timestamp: 7.0,
-//         id: String::from("2"),
-//     }));
 
 //     let serialized = serde_json::to_string_pretty(&log).unwrap();
 
