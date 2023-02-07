@@ -104,7 +104,7 @@ impl State {
     }
 
     pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
-        if timestamp < self.get_current_time() {
+        if self.get_current_time() < timestamp {
             return false;
         }
         match event {

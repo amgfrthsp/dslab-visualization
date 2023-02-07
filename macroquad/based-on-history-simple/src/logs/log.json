@@ -1,13 +1,13 @@
 {
-  "node_cnt": 2,
+  "node_cnt": 3,
   "events": [
     {
       "TypeSent": {
-        "timestamp": 0.0,
+        "timestamp": 1.0,
         "msg": {
           "id": "1",
-          "from": "0",
-          "to": "1",
+          "from": "1",
+          "to": "2",
           "data": "Hello"
         }
       }
@@ -16,6 +16,23 @@
       "TypeReceived": {
         "timestamp": 3.0,
         "id": "1"
+      }
+    },
+    {
+      "TypeSent": {
+        "timestamp": 4.0,
+        "msg": {
+          "id": "2",
+          "from": "2",
+          "to": "1",
+          "data": "Hi"
+        }
+      }
+    },
+    {
+      "TypeReceived": {
+        "timestamp": 7.0,
+        "id": "2"
       }
     }
   ]
