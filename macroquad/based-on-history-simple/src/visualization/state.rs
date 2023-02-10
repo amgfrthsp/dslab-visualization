@@ -104,7 +104,11 @@ impl State {
         self.check_keyboard_events();
 
         if self.paused {
+            self.last_updated = get_time();
             return;
+        } else {
+            self.current_time += (get_time() - self.last_updated) * (self.global_speed as f64);
+            self.last_updated = get_time();
         }
 
         while let Some(event) = self.event_queue.front() {
@@ -118,9 +122,6 @@ impl State {
             msg.update(self.global_speed);
         }
         self.messages.retain(|msg| !msg.is_delivered());
-
-        self.current_time += (get_time() - self.last_updated) * (self.global_speed as f64);
-        self.last_updated = get_time();
     }
 
     pub fn draw(&mut self) {
