@@ -102,6 +102,8 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        self.check_events();
+
         if self.is_paused() {
             return;
         }
@@ -130,7 +132,6 @@ impl State {
             msg.draw();
         }
         self.draw_time();
-        self.draw_pause_button();
     }
 
     pub fn draw_time(&self) {
@@ -147,17 +148,8 @@ impl State {
         );
     }
 
-    pub fn draw_pause_button(&mut self) {
-        let label = if self.is_paused() {
-            "Continue"
-        } else {
-            "Pause"
-        };
-        if widgets::Button::new(label)
-            .size(vec2(80., 25.))
-            .position(vec2(5., screen_height() - 30.))
-            .ui(&mut *root_ui())
-        {
+    pub fn check_events(&mut self) {
+        if is_key_pressed(KeyCode::Space) {
             if self.is_paused() {
                 self.time_paused += get_time() - self.pause_timestamp;
                 self.pause_timestamp = 0.0;
