@@ -3,10 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use macroquad::{
-    prelude::*,
-    ui::{root_ui, widgets, Skin},
-};
+use macroquad::prelude::*;
 
 use super::utilities::*;
 
@@ -28,9 +25,10 @@ pub struct State {
     nodes: HashMap<String, Rc<StateNode>>,
     messages: Vec<StateMessage>,
     event_queue: VecDeque<EventQueueItem>,
-    start_time: f64,
-    pause_timestamp: f64,
-    time_paused: f64,
+    current_time: f64,
+    last_updated: f64,
+    paused: bool,
+    global_speed: f32,
 }
 
 impl State {
@@ -39,9 +37,10 @@ impl State {
             nodes: HashMap::new(),
             messages: vec![],
             event_queue: VecDeque::new(),
-            start_time: 0.0,
-            pause_timestamp: 0.0,
-            time_paused: 0.0,
+            current_time: 0.0,
+            last_updated: 0.0,
+            paused: false,
+            global_speed: 1.0,
         }
     }
 
@@ -102,13 +101,10 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        self.check_events();
+        self.check_keyboard_events();
 
-        if self.is_paused() {
+        if self.paused {
             return;
-        }
-        if self.start_time == 0.0 && !self.event_queue.is_empty() {
-            self.start_time = get_time();
         }
 
         while let Some(event) = self.event_queue.front() {
@@ -119,9 +115,12 @@ impl State {
             }
         }
         for msg in &mut self.messages {
-            msg.update();
+            msg.update(self.global_speed);
         }
         self.messages.retain(|msg| !msg.is_delivered());
+
+        self.current_time += (get_time() - self.last_updated) * (self.global_speed as f64);
+        self.last_updated = get_time();
     }
 
     pub fn draw(&mut self) {
@@ -132,13 +131,14 @@ impl State {
             msg.draw();
         }
         self.draw_time();
+        self.draw_speed();
     }
 
     pub fn draw_time(&self) {
-        let time_str = (self.get_current_time().floor() as u32).to_string();
+        let time_str = (self.current_time.floor() as u32).to_string();
         draw_text_ex(
             &time_str,
-            screen_width() * 0.91,
+            screen_width() * 0.87,
             screen_height() * 0.96,
             TextParams {
                 font_size: (screen_width() / 12.0).floor() as u16,
@@ -148,31 +148,36 @@ impl State {
         );
     }
 
-    pub fn check_events(&mut self) {
+    pub fn draw_speed(&self) {
+        let speed = format!("speed:{:.2}", self.global_speed);
+        draw_text_ex(
+            &speed,
+            screen_width() * 0.02,
+            screen_height() * 0.97,
+            TextParams {
+                font_size: (screen_width() / 24.0).floor() as u16,
+                color: WHITE,
+                ..Default::default()
+            },
+        );
+    }
+
+    pub fn check_keyboard_events(&mut self) {
         if is_key_pressed(KeyCode::Space) {
-            if self.is_paused() {
-                self.time_paused += get_time() - self.pause_timestamp;
-                self.pause_timestamp = 0.0;
-            } else {
-                self.pause_timestamp = get_time();
+            self.paused = !self.paused;
+        }
+        if is_key_down(KeyCode::Up) {
+            self.global_speed += SPEED_DELTA;
+        }
+        if is_key_down(KeyCode::Down) {
+            if self.global_speed - SPEED_DELTA > 0.0 {
+                self.global_speed -= SPEED_DELTA;
             }
         }
     }
 
-    pub fn is_paused(&self) -> bool {
-        self.pause_timestamp > 0.0
-    }
-
-    pub fn get_current_time(&self) -> f64 {
-        if self.is_paused() {
-            self.pause_timestamp - self.start_time - self.time_paused
-        } else {
-            get_time() - self.start_time - self.time_paused
-        }
-    }
-
     pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
-        if self.get_current_time() < timestamp {
+        if self.current_time < timestamp {
             return false;
         }
         match event {
@@ -244,8 +249,8 @@ pub struct StateMessage {
 }
 
 impl StateMessage {
-    pub fn update(&mut self) {
-        self.pos += (self.to.pos - self.pos).normalize() * self.speed;
+    pub fn update(&mut self, global_speed: f32) {
+        self.pos += (self.to.pos - self.pos).normalize() * self.speed * global_speed;
     }
 
     pub fn draw(&self) {
@@ -260,7 +265,7 @@ impl StateMessage {
 
     pub fn is_delivered(&self) -> bool {
         if !self.drop {
-            calc_dist(self.pos, self.to.pos) < 2.0
+            calc_dist(self.pos, self.to.pos) < 5.0
         } else {
             let overall_dist = calc_dist(self.from.pos, self.to.pos);
             calc_dist(self.from.pos, self.pos) >= overall_dist * 0.7
