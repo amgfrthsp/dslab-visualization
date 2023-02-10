@@ -1,4 +1,7 @@
-use macroquad::prelude::*;
+use macroquad::{
+    prelude::*,
+    ui::{root_ui, Skin},
+};
 
 pub const NODE_RADIUS: f32 = 15.;
 pub const MESSAGE_RADIUS: f32 = 5.;

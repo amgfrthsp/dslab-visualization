@@ -3,7 +3,10 @@ use std::{
     rc::Rc,
 };
 
-use macroquad::prelude::*;
+use macroquad::{
+    prelude::*,
+    ui::{root_ui, widgets, Skin},
+};
 
 use super::utilities::*;
 
@@ -26,6 +29,8 @@ pub struct State {
     messages: Vec<StateMessage>,
     event_queue: VecDeque<EventQueueItem>,
     start_time: f64,
+    pause_timestamp: f64,
+    time_paused: f64,
 }
 
 impl State {
@@ -35,6 +40,8 @@ impl State {
             messages: vec![],
             event_queue: VecDeque::new(),
             start_time: 0.0,
+            pause_timestamp: 0.0,
+            time_paused: 0.0,
         }
     }
 
@@ -95,6 +102,9 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        if self.is_paused() {
+            return;
+        }
         if self.start_time == 0.0 && !self.event_queue.is_empty() {
             self.start_time = get_time();
         }
@@ -112,16 +122,21 @@ impl State {
         self.messages.retain(|msg| !msg.is_delivered());
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&mut self) {
         for (_, node) in &self.nodes {
             node.draw();
         }
         for msg in &self.messages {
             msg.draw();
         }
-        let time = (self.get_current_time().floor() as u32).to_string();
+        self.draw_time();
+        self.draw_pause_button();
+    }
+
+    pub fn draw_time(&self) {
+        let time_str = (self.get_current_time().floor() as u32).to_string();
         draw_text_ex(
-            &time,
+            &time_str,
             screen_width() * 0.91,
             screen_height() * 0.96,
             TextParams {
@@ -132,8 +147,36 @@ impl State {
         );
     }
 
+    pub fn draw_pause_button(&mut self) {
+        let label = if self.is_paused() {
+            "Continue"
+        } else {
+            "Pause"
+        };
+        if widgets::Button::new(label)
+            .size(vec2(80., 25.))
+            .position(vec2(5., screen_height() - 30.))
+            .ui(&mut *root_ui())
+        {
+            if self.is_paused() {
+                self.time_paused += get_time() - self.pause_timestamp;
+                self.pause_timestamp = 0.0;
+            } else {
+                self.pause_timestamp = get_time();
+            }
+        }
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.pause_timestamp > 0.0
+    }
+
     pub fn get_current_time(&self) -> f64 {
-        get_time() - self.start_time
+        if self.is_paused() {
+            self.pause_timestamp - self.start_time - self.time_paused
+        } else {
+            get_time() - self.start_time - self.time_paused
+        }
     }
 
     pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
