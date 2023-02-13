@@ -9,7 +9,7 @@ async fn main() {
     let mut state = State::new();
 
     let mut ec = EventController::new();
-    ec.parse_log("histories/ping-pong.json");
+    ec.parse_log("examples/ping-pong.json");
     ec.send_commands(&mut state);
 
     loop {
