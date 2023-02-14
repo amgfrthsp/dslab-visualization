@@ -1,0 +1,73 @@
+{
+    "node_cnt": 2,
+    "events": [
+        {
+            "TypeSent": {
+                "timestamp": 1.0,
+                "msg": {
+                    "id": "0",
+                    "from": "0",
+                    "to": "1",
+                    "data": "Hello"
+                }
+            }
+        },
+        {
+            "TypeReceived": {
+                "timestamp": 2.0,
+                "id": "0"
+            }
+        },
+        {
+            "TypeSent": {
+                "timestamp": 3,
+                "msg": {
+                    "id": "1",
+                    "from": "1",
+                    "to": "0",
+                    "data": "Hello"
+                }
+            }
+        },
+        {
+            "TypeReceived": {
+                "timestamp": 5.0,
+                "id": "1"
+            }
+        },
+        {
+            "TypeSent": {
+                "timestamp": 6,
+                "msg": {
+                    "id": "2",
+                    "from": "0",
+                    "to": "1",
+                    "data": "Hello"
+                }
+            }
+        },
+        {
+            "TypeReceived": {
+                "timestamp": 8.0,
+                "id": "2"
+            }
+        },
+        {
+            "TypeSent": {
+                "timestamp": 9,
+                "msg": {
+                    "id": "3",
+                    "from": "1",
+                    "to": "0",
+                    "data": "Hello"
+                }
+            }
+        },
+        {
+            "TypeReceived": {
+                "timestamp": 15.0,
+                "id": "3"
+            }
+        }
+    ]
+}
