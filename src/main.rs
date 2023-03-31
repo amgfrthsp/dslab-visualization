@@ -18,6 +18,10 @@ async fn main() {
     ec.send_commands(&mut state);
 
     loop {
+        state.draw_ui();
+
+        egui_macroquad::draw();
+
         state.update();
         state.draw();
 

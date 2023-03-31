@@ -1,5 +1,6 @@
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
+    f32::EPSILON,
     rc::Rc,
 };
 
@@ -21,6 +22,11 @@ pub struct EventQueueItem {
     event: StateEvent,
 }
 
+#[derive(Clone)]
+pub struct UIData {
+    show_node_windows: HashMap<String, bool>,
+}
+
 pub struct State {
     nodes: HashMap<String, Rc<StateNode>>,
     messages: Vec<StateMessage>,
@@ -29,6 +35,7 @@ pub struct State {
     last_updated: f64,
     paused: bool,
     global_speed: f32,
+    ui_data: UIData,
 }
 
 impl State {
@@ -41,6 +48,9 @@ impl State {
             last_updated: 0.0,
             paused: false,
             global_speed: 1.0,
+            ui_data: UIData {
+                show_node_windows: HashMap::new(),
+            },
         }
     }
 
@@ -125,6 +135,7 @@ impl State {
     }
 
     pub fn draw(&mut self) {
+        //self.draw_ui();
         for (_, node) in &self.nodes {
             node.draw();
         }
@@ -175,6 +186,41 @@ impl State {
                 self.global_speed -= SPEED_DELTA;
             }
         }
+        if is_mouse_button_down(MouseButton::Left) {
+            let mouse_pos = mouse_position();
+            let node_id = self.get_node_by_mouse_pos(mouse_pos.0, mouse_pos.1);
+            if node_id.is_some() {
+                self.ui_data
+                    .show_node_windows
+                    .insert(node_id.unwrap().0, true);
+            }
+        }
+    }
+
+    // -> Option(String, bool) -- bool stands for whether a node id or a message id is returned
+    pub fn get_node_by_mouse_pos(&mut self, x: f32, y: f32) -> Option<(String, bool)> {
+        for (_, node) in &self.nodes {
+            if calc_dist(Vec2 { x, y }, node.pos) < NODE_RADIUS {
+                return Some((node.id.clone(), true));
+            }
+        }
+        return None;
+    }
+
+    pub fn draw_ui(&mut self) {
+        egui_macroquad::ui(|egui_ctx| {
+            for (node_id, show_window) in &mut self.ui_data.show_node_windows {
+                let node = self.nodes.get(node_id).unwrap();
+                egui::Window::new(format!("Node {}", node_id))
+                    .open(show_window)
+                    .show(egui_ctx, |ui| {
+                        ui.label(format!(
+                            "Status: {}",
+                            if node.alive { "Alive" } else { "Crashed" }
+                        ));
+                    });
+            }
+        });
     }
 
     pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
