@@ -24,6 +24,7 @@ pub struct EventQueueItem {
 #[derive(Clone)]
 pub struct UIData {
     show_node_windows: HashMap<String, bool>,
+    show_msg_windows: HashMap<String, bool>,
 }
 
 pub struct State {
@@ -49,6 +50,7 @@ impl State {
             global_speed: 1.0,
             ui_data: UIData {
                 show_node_windows: HashMap::new(),
+                show_msg_windows: HashMap::new(),
             },
         }
     }
@@ -189,17 +191,25 @@ impl State {
         }
         if is_mouse_button_down(MouseButton::Left) {
             let mouse_pos = mouse_position();
-            let node_id = self.get_node_by_mouse_pos(mouse_pos.0, mouse_pos.1);
-            if node_id.is_some() {
-                self.ui_data
-                    .show_node_windows
-                    .insert(node_id.unwrap().0, true);
+            let object_id_opt = self.get_object_by_mouse_pos(mouse_pos.0, mouse_pos.1);
+            if object_id_opt.is_some() {
+                let object_id = object_id_opt.unwrap();
+                if object_id.1 {
+                    self.ui_data.show_node_windows.insert(object_id.0, true);
+                } else {
+                    self.ui_data.show_msg_windows.insert(object_id.0, true);
+                }
             }
         }
     }
 
     // -> Option(String, bool) -- bool stands for whether a node id or a message id is returned
-    pub fn get_node_by_mouse_pos(&mut self, x: f32, y: f32) -> Option<(String, bool)> {
+    pub fn get_object_by_mouse_pos(&mut self, x: f32, y: f32) -> Option<(String, bool)> {
+        for (_, msg) in &self.messages {
+            if calc_dist(Vec2 { x, y }, msg.pos) < MESSAGE_RADIUS {
+                return Some((msg.id.clone(), false));
+            }
+        }
         for (_, node) in &self.nodes {
             if calc_dist(Vec2 { x, y }, node.pos) < NODE_RADIUS {
                 return Some((node.id.clone(), true));
@@ -219,6 +229,19 @@ impl State {
                             "Status: {}",
                             if node.alive { "Alive" } else { "Crashed" }
                         ));
+                    });
+            }
+            for (msg_id, show_window) in &mut self.ui_data.show_msg_windows {
+                if !self.messages.contains_key(msg_id) {
+                    continue;
+                }
+                let msg = self.messages.get(msg_id).unwrap();
+                egui::Window::new(format!("Message {}", msg_id))
+                    .open(show_window)
+                    .show(egui_ctx, |ui| {
+                        ui.label(format!("From: {}", msg.from.id.clone()));
+                        ui.label(format!("To: {}", msg.to.id.clone()));
+                        ui.label(format!("Data: {}", msg.data.clone()));
                     });
             }
         });
