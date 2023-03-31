@@ -1,6 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    f32::EPSILON,
+    collections::{HashMap, VecDeque},
     rc::Rc,
 };
 
@@ -29,7 +28,7 @@ pub struct UIData {
 
 pub struct State {
     nodes: HashMap<String, Rc<StateNode>>,
-    messages: Vec<StateMessage>,
+    messages: HashMap<String, StateMessage>,
     event_queue: VecDeque<EventQueueItem>,
     current_time: f64,
     last_updated: f64,
@@ -42,7 +41,7 @@ impl State {
     pub fn new() -> Self {
         Self {
             nodes: HashMap::new(),
-            messages: vec![],
+            messages: HashMap::new(),
             event_queue: VecDeque::new(),
             current_time: 0.0,
             last_updated: 0.0,
@@ -67,6 +66,7 @@ impl State {
 
     pub fn send_message(
         &mut self,
+        id: String,
         timestamp: f64,
         from: &str,
         to: &str,
@@ -86,6 +86,7 @@ impl State {
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
             event: StateEvent::SendMessage(StateMessage {
+                id: id,
                 pos: self.nodes.get(from).unwrap().pos,
                 from: Rc::clone(self.nodes.get(from).unwrap()),
                 to: Rc::clone(self.nodes.get(to).unwrap()),
@@ -128,10 +129,10 @@ impl State {
                 break;
             }
         }
-        for msg in &mut self.messages {
+        for (_, msg) in &mut self.messages {
             msg.update(self.global_speed);
         }
-        self.messages.retain(|msg| !msg.is_delivered());
+        self.messages.retain(|_, msg| !msg.is_delivered());
     }
 
     pub fn draw(&mut self) {
@@ -139,7 +140,7 @@ impl State {
         for (_, node) in &self.nodes {
             node.draw();
         }
-        for msg in &self.messages {
+        for (_, msg) in &self.messages {
             msg.draw();
         }
         self.draw_time();
@@ -232,7 +233,7 @@ impl State {
                 self.nodes.insert(node.id.clone(), Rc::new(node));
             }
             StateEvent::SendMessage(msg) => {
-                self.messages.push(msg.clone());
+                self.messages.insert(msg.id.clone(), msg.clone());
                 println!("{:?}", msg);
             }
             StateEvent::NodeDown(id) => Rc::make_mut(self.nodes.get_mut(&id).unwrap()).make_dead(),
@@ -287,6 +288,7 @@ impl StateNode {
 
 #[derive(Debug, Clone)]
 pub struct StateMessage {
+    id: String,
     pos: Vec2,
     from: Rc<StateNode>,
     to: Rc<StateNode>,

@@ -49,6 +49,7 @@ impl EventController {
             match event {
                 Event::TypeSent(e) => {
                     let msg = ControllerMessage {
+                        id: e.msg.id.clone(),
                         from: e.msg.from,
                         to: e.msg.to,
                         data: e.msg.data,
@@ -84,6 +85,7 @@ impl EventController {
                 ControllerStateCommand::SendMessage(id) => {
                     let msg = self.messages.get(id).unwrap();
                     state.send_message(
+                        msg.id.clone(),
                         msg.time_sent,
                         &msg.from,
                         &msg.to,
@@ -103,6 +105,7 @@ impl EventController {
 }
 
 pub struct ControllerMessage {
+    id: String,
     from: String,
     to: String,
     data: String,
