@@ -83,11 +83,6 @@ impl State {
         data: String,
         duration: f32,
     ) {
-        let dist = calc_dist(
-            self.nodes.get(from).unwrap().borrow().pos,
-            self.nodes.get(to).unwrap().borrow().pos,
-        );
-        let drop = duration <= 0.0;
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
             event: StateEvent::SendMessage(StateMessage {
@@ -97,7 +92,7 @@ impl State {
                 to: Rc::clone(self.nodes.get(to).unwrap()),
                 time_delivered: timestamp as f32 + duration,
                 data,
-                drop,
+                drop: duration <= 0.0,
             }),
         });
     }
