@@ -357,11 +357,14 @@ impl StateMessage {
     pub fn update(&mut self, global_speed: f32, current_time: f32) {
         let direction = self.to.borrow().pos - self.pos;
         let travel_time_left = self.time_delivered - current_time;
-        let own_speed = if !self.drop {
+        let mut own_speed = if !self.drop {
             1.0 / (FPS * travel_time_left / direction.length())
         } else {
             1.0 / (FPS * 3.0 / direction.length())
         };
+        if own_speed < 0. {
+            own_speed = MAX_MESSAGE_SPEED;
+        }
         self.pos += direction.normalize() * own_speed * global_speed;
     }
 
