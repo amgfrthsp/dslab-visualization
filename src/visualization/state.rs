@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use macroquad::prelude::*;
+use macroquad::prelude::{camera::mouse, *};
 
 use super::utilities::*;
 
@@ -35,6 +35,9 @@ pub struct State {
     last_updated: f64,
     paused: bool,
     global_speed: f32,
+    last_clicked: f64,
+    selected_node: Option<String>,
+    selected_mouse_position: Vec2,
     ui_data: UIData,
 }
 
@@ -48,6 +51,9 @@ impl State {
             last_updated: 0.0,
             paused: false,
             global_speed: 1.0,
+            last_clicked: -1.,
+            selected_node: None,
+            selected_mouse_position: Vec2::new(0., 0.),
             ui_data: UIData {
                 show_node_windows: HashMap::new(),
                 show_msg_windows: HashMap::new(),
@@ -138,7 +144,6 @@ impl State {
     }
 
     pub fn draw(&mut self) {
-        //self.draw_ui();
         for (_, node) in &self.nodes {
             node.draw();
         }
@@ -191,28 +196,55 @@ impl State {
         }
         if is_mouse_button_down(MouseButton::Left) {
             let mouse_pos = mouse_position();
-            let object_id_opt = self.get_object_by_mouse_pos(mouse_pos.0, mouse_pos.1);
-            if object_id_opt.is_some() {
-                let object_id = object_id_opt.unwrap();
-                if object_id.1 {
-                    self.ui_data.show_node_windows.insert(object_id.0, true);
-                } else {
-                    self.ui_data.show_msg_windows.insert(object_id.0, true);
+            if self.selected_node.is_none() {
+                if let Some(node_id) = self.get_node_by_mouse_pos(mouse_pos) {
+                    self.selected_node = Some(node_id);
+                    self.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
                 }
+            } else {
+                let node_id = self.selected_node.clone().unwrap();
+                let node = self.nodes.get_mut(&node_id).unwrap();
+                let drag_direction =
+                    (Vec2::new(mouse_pos.0, mouse_pos.1) - self.selected_mouse_position);
+                if !drag_direction.is_nan() {
+                    let new_pos = node.pos + drag_direction;
+                    Rc::make_mut(node).update_pos(new_pos);
+                }
+                self.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
             }
+
+            if let Some(msg_id) = self.get_msg_by_mouse_pos(mouse_pos) {
+                self.ui_data.show_msg_windows.insert(msg_id, true);
+            }
+        }
+        if is_mouse_button_pressed(MouseButton::Left) {
+            self.last_clicked = self.current_time;
+        }
+        if is_mouse_button_released(MouseButton::Left) {
+            if self.current_time - self.last_clicked <= SINGLE_CLICK_DELAY
+                && self.selected_node.is_some()
+            {
+                self.ui_data
+                    .show_node_windows
+                    .insert(self.selected_node.clone().unwrap(), true);
+            }
+            self.selected_node = None;
         }
     }
 
-    // -> Option(String, bool) -- bool stands for whether a node id or a message id is returned
-    pub fn get_object_by_mouse_pos(&mut self, x: f32, y: f32) -> Option<(String, bool)> {
+    pub fn get_msg_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, msg) in &self.messages {
-            if calc_dist(Vec2 { x, y }, msg.pos) < MESSAGE_RADIUS {
-                return Some((msg.id.clone(), false));
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), msg.pos) < MESSAGE_RADIUS {
+                return Some(msg.id.clone());
             }
         }
+        return None;
+    }
+
+    pub fn get_node_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, node) in &self.nodes {
-            if calc_dist(Vec2 { x, y }, node.pos) < NODE_RADIUS {
-                return Some((node.id.clone(), true));
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.pos) < NODE_RADIUS {
+                return Some(node.id.clone());
             }
         }
         return None;
@@ -257,7 +289,6 @@ impl State {
             }
             StateEvent::SendMessage(msg) => {
                 self.messages.insert(msg.id.clone(), msg.clone());
-                println!("{:?}", msg);
             }
             StateEvent::NodeDown(id) => Rc::make_mut(self.nodes.get_mut(&id).unwrap()).make_dead(),
             StateEvent::NodeUp(id) => Rc::make_mut(self.nodes.get_mut(&id).unwrap()).make_alive(),
@@ -274,7 +305,12 @@ pub struct StateNode {
 }
 
 impl StateNode {
+    pub fn update_pos(&mut self, new_pos: Vec2) {
+        self.pos = new_pos;
+    }
+
     pub fn draw(&self) {
+        println!("From node {}: {}", self.id, self.pos);
         draw_circle(
             self.pos.x,
             self.pos.y,
@@ -322,6 +358,7 @@ pub struct StateMessage {
 
 impl StateMessage {
     pub fn update(&mut self, global_speed: f32) {
+        println!("From message to node {}: {}", self.to.id, self.to.pos);
         self.pos += (self.to.pos - self.pos).normalize() * self.speed * global_speed;
     }
 

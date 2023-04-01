@@ -77,7 +77,6 @@ impl EventController {
 
     pub fn send_commands(&self, state: &mut State) {
         for command in &self.commands {
-            println!("{:?}", command);
             match &command.1 {
                 ControllerStateCommand::AddNode(node) => {
                     state.add_node(0.0, node.id.clone(), node.pos);

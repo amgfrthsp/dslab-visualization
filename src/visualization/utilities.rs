@@ -10,6 +10,8 @@ pub const DEAD_NODE_COLOR: Color = RED;
 
 pub const SPEED_DELTA: f32 = 0.02;
 
+pub const SINGLE_CLICK_DELAY: f64 = 0.3;
+
 pub fn calc_dist(a: Vec2, b: Vec2) -> f32 {
     ((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)).sqrt()
 }
