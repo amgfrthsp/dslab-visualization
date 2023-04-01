@@ -1,9 +1,10 @@
 use std::{
+    cell::RefCell,
     collections::{HashMap, VecDeque},
     rc::Rc,
 };
 
-use macroquad::prelude::{camera::mouse, *};
+use macroquad::prelude::*;
 
 use super::utilities::*;
 
@@ -28,7 +29,7 @@ pub struct UIData {
 }
 
 pub struct State {
-    nodes: HashMap<String, Rc<StateNode>>,
+    nodes: HashMap<String, Rc<RefCell<StateNode>>>,
     messages: HashMap<String, StateMessage>,
     event_queue: VecDeque<EventQueueItem>,
     current_time: f64,
@@ -67,7 +68,8 @@ impl State {
             pos: pos,
             alive: true,
         };
-        self.nodes.insert(node.id.clone(), Rc::new(node));
+        self.nodes
+            .insert(node.id.clone(), Rc::new(RefCell::new(node)));
         /*self.event_queue
         .push_back((timestamp, StateEvent::AddNode(StateNode { id, pos })));*/
     }
@@ -82,8 +84,8 @@ impl State {
         duration: f32,
     ) {
         let dist = calc_dist(
-            self.nodes.get(from).unwrap().pos,
-            self.nodes.get(to).unwrap().pos,
+            self.nodes.get(from).unwrap().borrow().pos,
+            self.nodes.get(to).unwrap().borrow().pos,
         );
         let drop = duration <= 0.0;
         let speed = if !drop {
@@ -95,8 +97,8 @@ impl State {
             timestamp: timestamp,
             event: StateEvent::SendMessage(StateMessage {
                 id: id,
-                pos: self.nodes.get(from).unwrap().pos,
-                from: Rc::clone(self.nodes.get(from).unwrap()),
+                pos: self.nodes.get(from).unwrap().borrow().pos,
+                from: self.nodes.get(from).unwrap().clone(),
                 to: Rc::clone(self.nodes.get(to).unwrap()),
                 speed,
                 data,
@@ -145,7 +147,7 @@ impl State {
 
     pub fn draw(&mut self) {
         for (_, node) in &self.nodes {
-            node.draw();
+            node.borrow().draw();
         }
         for (_, msg) in &self.messages {
             msg.draw();
@@ -205,10 +207,10 @@ impl State {
                 let node_id = self.selected_node.clone().unwrap();
                 let node = self.nodes.get_mut(&node_id).unwrap();
                 let drag_direction =
-                    (Vec2::new(mouse_pos.0, mouse_pos.1) - self.selected_mouse_position);
+                    Vec2::new(mouse_pos.0, mouse_pos.1) - self.selected_mouse_position;
                 if !drag_direction.is_nan() {
-                    let new_pos = node.pos + drag_direction;
-                    Rc::make_mut(node).update_pos(new_pos);
+                    let new_pos = node.borrow().pos + drag_direction;
+                    node.borrow_mut().update_pos(new_pos);
                 }
                 self.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
             }
@@ -243,8 +245,8 @@ impl State {
 
     pub fn get_node_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, node) in &self.nodes {
-            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.pos) < NODE_RADIUS {
-                return Some(node.id.clone());
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.borrow().pos) < NODE_RADIUS {
+                return Some(node.borrow().id.clone());
             }
         }
         return None;
@@ -259,7 +261,11 @@ impl State {
                     .show(egui_ctx, |ui| {
                         ui.label(format!(
                             "Status: {}",
-                            if node.alive { "Alive" } else { "Crashed" }
+                            if node.borrow().alive {
+                                "Alive"
+                            } else {
+                                "Crashed"
+                            }
                         ));
                     });
             }
@@ -271,8 +277,8 @@ impl State {
                 egui::Window::new(format!("Message {}", msg_id))
                     .open(show_window)
                     .show(egui_ctx, |ui| {
-                        ui.label(format!("From: {}", msg.from.id.clone()));
-                        ui.label(format!("To: {}", msg.to.id.clone()));
+                        ui.label(format!("From: {}", msg.from.borrow().id.clone()));
+                        ui.label(format!("To: {}", msg.to.borrow().id.clone()));
                         ui.label(format!("Data: {}", msg.data.clone()));
                     });
             }
@@ -285,13 +291,14 @@ impl State {
         }
         match event {
             StateEvent::AddNode(node) => {
-                self.nodes.insert(node.id.clone(), Rc::new(node));
+                self.nodes
+                    .insert(node.id.clone(), Rc::new(RefCell::new(node)));
             }
             StateEvent::SendMessage(msg) => {
                 self.messages.insert(msg.id.clone(), msg.clone());
             }
-            StateEvent::NodeDown(id) => Rc::make_mut(self.nodes.get_mut(&id).unwrap()).make_dead(),
-            StateEvent::NodeUp(id) => Rc::make_mut(self.nodes.get_mut(&id).unwrap()).make_alive(),
+            StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
+            StateEvent::NodeUp(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_alive(),
         }
         true
     }
@@ -349,8 +356,8 @@ impl StateNode {
 pub struct StateMessage {
     id: String,
     pos: Vec2,
-    from: Rc<StateNode>,
-    to: Rc<StateNode>,
+    from: Rc<RefCell<StateNode>>,
+    to: Rc<RefCell<StateNode>>,
     speed: f32,
     data: String,
     drop: bool,
@@ -358,26 +365,31 @@ pub struct StateMessage {
 
 impl StateMessage {
     pub fn update(&mut self, global_speed: f32) {
-        println!("From message to node {}: {}", self.to.id, self.to.pos);
-        self.pos += (self.to.pos - self.pos).normalize() * self.speed * global_speed;
+        println!(
+            "From message to node {}: {}",
+            self.to.borrow().id,
+            self.to.borrow().pos
+        );
+        self.pos += (self.to.borrow().pos - self.pos).normalize() * self.speed * global_speed;
     }
 
     pub fn draw(&self) {
-        let overall_dist = calc_dist(self.from.pos, self.to.pos);
-        let color = if self.drop && calc_dist(self.from.pos, self.pos) >= overall_dist * 0.4 {
-            RED
-        } else {
-            BLUE
-        };
+        let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
+        let color =
+            if self.drop && calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.4 {
+                RED
+            } else {
+                BLUE
+            };
         draw_circle(self.pos.x, self.pos.y, MESSAGE_RADIUS, color);
     }
 
     pub fn is_delivered(&self) -> bool {
         if !self.drop {
-            calc_dist(self.pos, self.to.pos) < 5.0
+            calc_dist(self.pos, self.to.borrow().pos) < 5.0
         } else {
-            let overall_dist = calc_dist(self.from.pos, self.to.pos);
-            calc_dist(self.from.pos, self.pos) >= overall_dist * 0.7
+            let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
+            calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7
         }
     }
 }
