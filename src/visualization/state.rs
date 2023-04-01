@@ -294,7 +294,8 @@ impl State {
                 self.nodes
                     .insert(node.id.clone(), Rc::new(RefCell::new(node)));
             }
-            StateEvent::SendMessage(msg) => {
+            StateEvent::SendMessage(mut msg) => {
+                msg.update_start_pos();
                 self.messages.insert(msg.id.clone(), msg.clone());
             }
             StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
@@ -317,7 +318,6 @@ impl StateNode {
     }
 
     pub fn draw(&self) {
-        println!("From node {}: {}", self.id, self.pos);
         draw_circle(
             self.pos.x,
             self.pos.y,
@@ -365,11 +365,6 @@ pub struct StateMessage {
 
 impl StateMessage {
     pub fn update(&mut self, global_speed: f32) {
-        println!(
-            "From message to node {}: {}",
-            self.to.borrow().id,
-            self.to.borrow().pos
-        );
         self.pos += (self.to.borrow().pos - self.pos).normalize() * self.speed * global_speed;
     }
 
@@ -391,5 +386,9 @@ impl StateMessage {
             let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
             calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7
         }
+    }
+
+    pub fn update_start_pos(&mut self) {
+        self.pos = self.from.borrow().pos;
     }
 }
