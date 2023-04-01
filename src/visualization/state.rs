@@ -179,11 +179,11 @@ impl State {
             self.paused = !self.paused;
         }
         if is_key_down(KeyCode::Up) {
-            self.global_speed += SPEED_DELTA;
+            self.global_speed += GLOBAL_SPEED_DELTA;
         }
         if is_key_down(KeyCode::Down) {
-            if self.global_speed - SPEED_DELTA > 0.0 {
-                self.global_speed -= SPEED_DELTA;
+            if self.global_speed - GLOBAL_SPEED_DELTA > 0.0 {
+                self.global_speed -= GLOBAL_SPEED_DELTA;
             }
         }
         if is_mouse_button_down(MouseButton::Left) {

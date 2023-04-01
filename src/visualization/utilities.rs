@@ -8,7 +8,7 @@ pub const FPS: f32 = 60.0;
 pub const ALIVE_NODE_COLOR: Color = YELLOW;
 pub const DEAD_NODE_COLOR: Color = RED;
 
-pub const SPEED_DELTA: f32 = 0.02;
+pub const GLOBAL_SPEED_DELTA: f32 = 0.02;
 pub const MAX_MESSAGE_SPEED: f32 = 30.;
 
 pub const SINGLE_CLICK_DELAY: f64 = 0.3;
