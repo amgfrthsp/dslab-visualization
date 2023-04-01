@@ -88,11 +88,6 @@ impl State {
             self.nodes.get(to).unwrap().borrow().pos,
         );
         let drop = duration <= 0.0;
-        let speed = if !drop {
-            1.0 / (FPS * duration / dist)
-        } else {
-            1.0 / (FPS * 3.0 / dist)
-        };
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
             event: StateEvent::SendMessage(StateMessage {
@@ -100,7 +95,7 @@ impl State {
                 pos: self.nodes.get(from).unwrap().borrow().pos,
                 from: self.nodes.get(from).unwrap().clone(),
                 to: Rc::clone(self.nodes.get(to).unwrap()),
-                speed,
+                time_delivered: timestamp as f32 + duration,
                 data,
                 drop,
             }),
@@ -140,7 +135,7 @@ impl State {
             }
         }
         for (_, msg) in &mut self.messages {
-            msg.update(self.global_speed);
+            msg.update(self.global_speed, self.current_time as f32);
         }
         self.messages.retain(|_, msg| !msg.is_delivered());
     }
@@ -358,14 +353,21 @@ pub struct StateMessage {
     pos: Vec2,
     from: Rc<RefCell<StateNode>>,
     to: Rc<RefCell<StateNode>>,
-    speed: f32,
+    time_delivered: f32,
     data: String,
     drop: bool,
 }
 
 impl StateMessage {
-    pub fn update(&mut self, global_speed: f32) {
-        self.pos += (self.to.borrow().pos - self.pos).normalize() * self.speed * global_speed;
+    pub fn update(&mut self, global_speed: f32, current_time: f32) {
+        let direction = self.to.borrow().pos - self.pos;
+        let travel_time_left = self.time_delivered - current_time;
+        let own_speed = if !self.drop {
+            1.0 / (FPS * travel_time_left / direction.length())
+        } else {
+            1.0 / (FPS * 3.0 / direction.length())
+        };
+        self.pos += direction.normalize() * own_speed * global_speed;
     }
 
     pub fn draw(&self) {
