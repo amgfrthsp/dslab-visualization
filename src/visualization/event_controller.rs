@@ -13,10 +13,12 @@ pub enum ControllerStateCommand {
     NodeUp(String),
     NodeDown(String),
     AddNode(ControllerNode),
+    TimerSet(String),
 }
 
 pub struct EventController {
     messages: HashMap<String, ControllerMessage>,
+    timers: HashMap<String, ControllerTimer>,
     commands: Vec<(f64, ControllerStateCommand)>,
 }
 
@@ -24,6 +26,7 @@ impl EventController {
     pub fn new() -> Self {
         Self {
             messages: HashMap::new(),
+            timers: HashMap::new(),
             commands: vec![],
         }
     }
@@ -71,6 +74,21 @@ impl EventController {
                     self.commands
                         .push((e.timestamp, ControllerStateCommand::NodeUp(e.id)));
                 }
+                Event::TypeTimerSet(e) => {
+                    let timer = ControllerTimer {
+                        id: e.timer.id.clone(),
+                        node_id: e.timer.node_id,
+                        delay: e.timer.delay,
+                        time_set: e.timestamp,
+                        time_removed: -1.,
+                    };
+                    self.timers.insert(e.timer.id.clone(), timer);
+                    self.commands
+                        .push((e.timestamp, ControllerStateCommand::TimerSet(e.timer.id)));
+                }
+                Event::TypeTimerRemoved(e) => {
+                    self.timers.get_mut(&e.id).unwrap().time_removed = e.timestamp;
+                }
             }
         }
     }
@@ -98,6 +116,16 @@ impl EventController {
                 ControllerStateCommand::NodeUp(id) => {
                     state.process_node_up(command.0, id.to_string())
                 }
+                ControllerStateCommand::TimerSet(id) => {
+                    let timer = self.timers.get(id).unwrap();
+                    state.process_timer_set(
+                        timer.id.clone(),
+                        timer.time_set,
+                        timer.node_id.clone(),
+                        timer.delay,
+                        timer.time_removed,
+                    );
+                }
             }
         }
     }
@@ -111,6 +139,15 @@ pub struct ControllerMessage {
     time_sent: f64,
     time_received: f64,
 }
+
+pub struct ControllerTimer {
+    id: String,
+    node_id: String,
+    time_set: f64,
+    delay: f64,
+    time_removed: f64,
+}
+
 #[derive(Debug)]
 pub struct ControllerNode {
     id: String,

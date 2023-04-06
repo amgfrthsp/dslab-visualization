@@ -31,6 +31,7 @@ async fn main() {
 
 // LOG BUILDER
 
+// use core::time;
 // use std::fs::OpenOptions;
 // use std::io::prelude::*;
 
@@ -71,36 +72,63 @@ async fn main() {
 //     }));
 // }
 
+// fn set_timer(log: &mut EventLog, id: &str, timestamp: f64, node_id: &str, delay: f64) {
+//     let timer = Timer {
+//         id: id.to_string(),
+//         node_id: node_id.to_string(),
+//         delay,
+//     };
+//     log.events
+//         .push(Event::TypeTimerSet(EventTimerSet { timestamp, timer }));
+// }
+
+// fn removed_timer(log: &mut EventLog, id: &str, timestamp: f64) {
+//     log.events.push(Event::TypeTimerRemoved(EventTimerRemoved {
+//         timestamp,
+//         id: id.to_string(),
+//     }));
+// }
+
 // fn main() {
 //     let mut log = EventLog {
-//         node_cnt: 5,
+//         node_cnt: 1,
 //         events: vec![],
 //     };
 
-//     send_message(&mut log, "0", "0", "1", 1.);
-//     send_message(&mut log, "1", "0", "2", 1.);
-//     send_message(&mut log, "2", "0", "3", 1.);
-//     send_message(&mut log, "3", "0", "4", 1.);
+//     set_timer(&mut log, "0", 3.0, "0", 10.);
+//     removed_timer(&mut log, "0", 13.0);
 
-//     receive_message(&mut log, "0", 3.);
-//     receive_message(&mut log, "1", 4.);
-//     receive_message(&mut log, "2", 5.);
-//     receive_message(&mut log, "3", 6.);
+//     set_timer(&mut log, "1", 3.0, "0", 10.);
+//     removed_timer(&mut log, "1", 13.0);
 
-//     send_message(&mut log, "4", "3", "1", 4.);
-//     send_message(&mut log, "5", "3", "2", 4.);
-//     send_message(&mut log, "6", "3", "0", 4.);
-//     send_message(&mut log, "7", "3", "4", 4.);
+//     set_timer(&mut log, "2", 3.0, "0", 10.);
+//     removed_timer(&mut log, "2", 13.0);
 
-//     receive_message(&mut log, "4", 6.);
-//     receive_message(&mut log, "5", 7.);
-//     receive_message(&mut log, "6", 8.);
-//     receive_message(&mut log, "7", 9.);
+//     set_timer(&mut log, "3", 3.0, "0", 10.);
+//     removed_timer(&mut log, "3", 13.0);
+
+//     set_timer(&mut log, "4", 3.0, "0", 10.);
+//     removed_timer(&mut log, "4", 13.0);
+
+//     set_timer(&mut log, "5", 3.0, "0", 10.);
+//     removed_timer(&mut log, "5", 13.0);
+
+//     set_timer(&mut log, "6", 3.0, "0", 10.);
+//     removed_timer(&mut log, "6", 13.0);
+
+//     set_timer(&mut log, "7", 3.0, "0", 10.);
+//     removed_timer(&mut log, "7", 13.0);
+
+//     set_timer(&mut log, "8", 3.0, "0", 10.);
+//     removed_timer(&mut log, "8", 13.0);
+
+//     set_timer(&mut log, "10", 6.0, "0", 10.);
+//     removed_timer(&mut log, "10", 9.0);
 
 //     let serialized = serde_json::to_string_pretty(&log).unwrap();
 //     let mut file = OpenOptions::new()
 //         .write(true)
-//         .open("examples/broadcast.json")
+//         .open("examples/one_timer.json")
 //         .unwrap();
 //     file.write_all(serialized.as_bytes()).unwrap();
 // }

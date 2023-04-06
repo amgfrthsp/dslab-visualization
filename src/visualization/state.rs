@@ -1,6 +1,8 @@
 use std::{
     cell::RefCell,
+    cmp::min,
     collections::{HashMap, VecDeque},
+    f32::consts::PI,
     rc::Rc,
 };
 
@@ -14,6 +16,7 @@ pub enum StateEvent {
     SendMessage(StateMessage),
     NodeUp(String),
     NodeDown(String),
+    TimerSet(StateTimer),
 }
 
 #[derive(Clone)]
@@ -67,6 +70,8 @@ impl State {
             id: id,
             pos: pos,
             alive: true,
+            timers: VecDeque::new(),
+            free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
         };
         self.nodes
             .insert(node.id.clone(), Rc::new(RefCell::new(node)));
@@ -111,6 +116,28 @@ impl State {
         });
     }
 
+    pub fn process_timer_set(
+        &mut self,
+        id: String,
+        time_set: f64,
+        node_id: String,
+        delay: f64,
+        time_removed: f64,
+    ) {
+        let timer = StateTimer {
+            id,
+            time_set,
+            node_id,
+            delay,
+            time_removed,
+            k: -1,
+        };
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: time_set,
+            event: StateEvent::TimerSet(timer),
+        });
+    }
+
     pub fn update(&mut self) {
         self.check_keyboard_events();
 
@@ -129,6 +156,9 @@ impl State {
                 break;
             }
         }
+        for (_, node) in &mut self.nodes {
+            node.borrow_mut().update(self.current_time);
+        }
         for (_, msg) in &mut self.messages {
             msg.update(self.global_speed, self.current_time as f32);
         }
@@ -137,7 +167,7 @@ impl State {
 
     pub fn draw(&mut self) {
         for (_, node) in &self.nodes {
-            node.borrow().draw();
+            node.borrow().draw(self.current_time);
         }
         for (_, msg) in &self.messages {
             msg.draw();
@@ -290,6 +320,13 @@ impl State {
             }
             StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
             StateEvent::NodeUp(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_alive(),
+            StateEvent::TimerSet(timer) => self
+                .nodes
+                .get_mut(&timer.node_id)
+                .unwrap()
+                .borrow_mut()
+                .timers
+                .push_back(timer),
         }
         true
     }
@@ -300,6 +337,8 @@ pub struct StateNode {
     id: String,
     pos: Vec2,
     alive: bool,
+    timers: VecDeque<StateTimer>,
+    free_timer_slots: VecDeque<usize>,
 }
 
 impl StateNode {
@@ -307,7 +346,22 @@ impl StateNode {
         self.pos = new_pos;
     }
 
-    pub fn draw(&self) {
+    pub fn update(&mut self, current_time: f64) {
+        for timer in &mut self.timers {
+            if timer.k == -1 {
+                if !self.free_timer_slots.is_empty() {
+                    timer.k = *self.free_timer_slots.front().unwrap() as i32;
+                    self.free_timer_slots.pop_front();
+                }
+            } else if current_time >= timer.time_removed + 1.5 {
+                self.free_timer_slots.push_back(timer.k as usize);
+            }
+        }
+        self.timers
+            .retain(|timer| current_time < timer.time_removed + 1.5);
+    }
+
+    pub fn draw(&self, current_time: f64) {
         draw_circle(
             self.pos.x,
             self.pos.y,
@@ -331,6 +385,13 @@ impl StateNode {
                 ..Default::default()
             },
         );
+
+        for i in 0..self.timers.len() {
+            if self.timers[i].k == -1 {
+                break;
+            }
+            self.timers[i].draw(self.pos, current_time);
+        }
     }
 
     pub fn make_alive(&mut self) {
@@ -339,6 +400,42 @@ impl StateNode {
 
     pub fn make_dead(&mut self) {
         self.alive = false;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct StateTimer {
+    id: String,
+    time_set: f64,
+    node_id: String,
+    delay: f64,
+    time_removed: f64,
+    k: i32,
+}
+
+impl StateTimer {
+    pub fn draw(&self, node_pos: Vec2, current_time: f64) {
+        let angle = (2.0 * PI / (TIMERS_MAX_NUMBER as f32)) * (self.k as f32);
+        let pos = node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.);
+        let mut color = TIMER_COLOR;
+        if current_time >= self.time_removed {
+            color = if self.time_removed < self.time_set + self.delay {
+                CANCELLED_TIMER_COLOR
+            } else {
+                READY_TIMER_COLOR
+            };
+        }
+        let end_angle =
+            ((current_time - self.time_set) * 2. * (PI as f64) / self.delay) as f32 - PI / 2.;
+        draw_circle_segment(
+            pos.x,
+            pos.y,
+            TIMER_RADIUS,
+            -PI / 2.,
+            end_angle as f32,
+            color,
+        );
+        draw_circle_lines(pos.x, pos.y, TIMER_RADIUS, 2., color)
     }
 }
 

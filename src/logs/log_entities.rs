@@ -12,6 +12,8 @@ pub enum Event {
     TypeReceived(EventReceived),
     TypeNodeUp(EventNodeUp),
     TypeNodeDown(EventNodeDown),
+    TypeTimerSet(EventTimerSet),
+    TypeTimerRemoved(EventTimerRemoved),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -39,9 +41,28 @@ pub struct EventNodeDown {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct EventTimerSet {
+    pub timestamp: f64,
+    pub timer: Timer,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventTimerRemoved {
+    pub timestamp: f64,
+    pub id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
     pub id: String,
     pub from: String,
     pub to: String,
     pub data: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Timer {
+    pub id: String,
+    pub node_id: String,
+    pub delay: f64,
 }
