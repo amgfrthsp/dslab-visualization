@@ -1,14 +1,17 @@
 use std::{
     cell::RefCell,
     collections::{HashMap, VecDeque},
-    f32::consts::PI,
     rc::Rc,
 };
 
 use egui::ScrollArea;
 use macroquad::prelude::*;
 
-use super::utilities::*;
+use crate::visualization::utilities::*;
+
+use super::message::*;
+use super::node::*;
+use super::timer::*;
 
 #[derive(Clone, Debug)]
 pub enum StateEvent {
@@ -29,6 +32,10 @@ pub struct EventQueueItem {
 pub struct UIData {
     show_node_windows: HashMap<String, bool>,
     show_msg_windows: HashMap<String, bool>,
+    last_clicked: f64,
+    selected_node: Option<String>,
+    selected_mouse_position: Vec2,
+    hovered_timer: Option<StateTimer>,
 }
 
 pub struct State {
@@ -40,10 +47,6 @@ pub struct State {
     last_updated: f64,
     paused: bool,
     global_speed: f32,
-    last_clicked: f64,
-    selected_node: Option<String>,
-    selected_mouse_position: Vec2,
-    hovered_timer: Option<StateTimer>,
     ui_data: UIData,
 }
 
@@ -58,13 +61,13 @@ impl State {
             last_updated: 0.0,
             paused: false,
             global_speed: 1.0,
-            last_clicked: -1.,
-            selected_node: None,
-            selected_mouse_position: Vec2::new(0., 0.),
-            hovered_timer: None,
             ui_data: UIData {
                 show_node_windows: HashMap::new(),
                 show_msg_windows: HashMap::new(),
+                last_clicked: -1.,
+                selected_node: None,
+                selected_mouse_position: Vec2::new(0., 0.),
+                hovered_timer: None,
             },
         }
     }
@@ -240,21 +243,21 @@ impl State {
         }
         if is_mouse_button_down(MouseButton::Left) {
             let mouse_pos = mouse_position();
-            if self.selected_node.is_none() {
+            if self.ui_data.selected_node.is_none() {
                 if let Some(node_id) = self.get_node_by_mouse_pos(mouse_pos) {
-                    self.selected_node = Some(node_id);
-                    self.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
+                    self.ui_data.selected_node = Some(node_id);
+                    self.ui_data.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
                 }
             } else {
-                let node_id = self.selected_node.clone().unwrap();
+                let node_id = self.ui_data.selected_node.clone().unwrap();
                 let node = self.nodes.get_mut(&node_id).unwrap();
                 let drag_direction =
-                    Vec2::new(mouse_pos.0, mouse_pos.1) - self.selected_mouse_position;
+                    Vec2::new(mouse_pos.0, mouse_pos.1) - self.ui_data.selected_mouse_position;
                 if !drag_direction.is_nan() {
                     let new_pos = node.borrow().pos + drag_direction;
                     node.borrow_mut().update_pos(new_pos);
                 }
-                self.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
+                self.ui_data.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
             }
 
             if let Some(msg_id) = self.get_msg_by_mouse_pos(mouse_pos) {
@@ -262,21 +265,21 @@ impl State {
             }
         }
         if is_mouse_button_pressed(MouseButton::Left) {
-            self.last_clicked = self.current_time;
+            self.ui_data.last_clicked = self.current_time;
         }
         if is_mouse_button_released(MouseButton::Left) {
-            if self.current_time - self.last_clicked <= SINGLE_CLICK_DELAY
-                && self.selected_node.is_some()
+            if self.current_time - self.ui_data.last_clicked <= SINGLE_CLICK_DELAY
+                && self.ui_data.selected_node.is_some()
             {
                 self.ui_data
                     .show_node_windows
-                    .insert(self.selected_node.clone().unwrap(), true);
+                    .insert(self.ui_data.selected_node.clone().unwrap(), true);
             }
-            self.selected_node = None;
+            self.ui_data.selected_node = None;
         }
         for (_, node) in &self.nodes {
-            self.hovered_timer = node.borrow().check_for_hovered_timer();
-            if self.hovered_timer.is_some() {
+            self.ui_data.hovered_timer = node.borrow().check_for_hovered_timer();
+            if self.ui_data.hovered_timer.is_some() {
                 break;
             }
         }
@@ -302,7 +305,7 @@ impl State {
 
     pub fn draw_ui(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
-            if let Some(timer) = &self.hovered_timer {
+            if let Some(timer) = &self.ui_data.hovered_timer {
                 egui::Window::new(format!("Timer"))
                     .default_pos(mouse_position())
                     .show(egui_ctx, |ui| {
@@ -410,209 +413,5 @@ impl State {
                 .push_back(timer),
         }
         true
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct StateNode {
-    id: String,
-    pos: Vec2,
-    alive: bool,
-    sent_messages: Vec<String>,
-    received_messages: Vec<String>,
-    timers: VecDeque<StateTimer>,
-    free_timer_slots: VecDeque<usize>,
-}
-
-impl StateNode {
-    pub fn update_pos(&mut self, new_pos: Vec2) {
-        self.pos = new_pos;
-    }
-
-    pub fn update(&mut self, current_time: f64) {
-        for timer in &mut self.timers {
-            if timer.k == -1 {
-                if !self.free_timer_slots.is_empty() {
-                    timer.k = *self.free_timer_slots.front().unwrap() as i32;
-                    self.free_timer_slots.pop_front();
-                }
-            } else if current_time >= timer.time_removed + 1.5 {
-                self.free_timer_slots.push_back(timer.k as usize);
-            }
-        }
-        self.timers
-            .retain(|timer| current_time < timer.time_removed + 1.5);
-    }
-
-    pub fn check_for_hovered_timer(&self) -> Option<StateTimer> {
-        let mut hovered_timer: Option<StateTimer> = None;
-        for timer in &self.timers {
-            if timer.check_hovered(self.pos) {
-                hovered_timer = Some(timer.clone());
-                break;
-            }
-        }
-        return hovered_timer;
-    }
-
-    pub fn draw(&self, current_time: f64) {
-        draw_circle(
-            self.pos.x,
-            self.pos.y,
-            NODE_RADIUS,
-            if self.alive {
-                ALIVE_NODE_COLOR
-            } else {
-                DEAD_NODE_COLOR
-            },
-        );
-
-        let offset = NODE_RADIUS / 2.25;
-
-        draw_text_ex(
-            &self.id,
-            self.pos.x - offset,
-            self.pos.y + offset,
-            TextParams {
-                font_size: (NODE_RADIUS * 2.0).floor() as u16,
-                color: BLACK,
-                ..Default::default()
-            },
-        );
-
-        for i in 0..self.timers.len() {
-            if self.timers[i].k == -1 {
-                break;
-            }
-            self.timers[i].draw(self.pos, current_time);
-        }
-    }
-
-    pub fn make_alive(&mut self) {
-        self.alive = true;
-    }
-
-    pub fn make_dead(&mut self) {
-        self.alive = false;
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct StateTimer {
-    id: String,
-    time_set: f64,
-    node_id: String,
-    delay: f64,
-    time_removed: f64,
-    k: i32,
-}
-
-impl StateTimer {
-    pub fn get_position(&self, node_pos: Vec2) -> Vec2 {
-        let angle = (2.0 * PI / (TIMERS_MAX_NUMBER as f32)) * (self.k as f32);
-        return node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.);
-    }
-
-    pub fn check_hovered(&self, node_pos: Vec2) -> bool {
-        let mouse_pos = Vec2::from(mouse_position());
-        return calc_dist(self.get_position(node_pos), mouse_pos) <= TIMER_RADIUS;
-    }
-
-    pub fn draw(&self, node_pos: Vec2, current_time: f64) {
-        let pos = self.get_position(node_pos);
-        let mut color = TIMER_COLOR;
-        if current_time >= self.time_removed {
-            color = if self.time_removed < self.time_set + self.delay {
-                CANCELLED_TIMER_COLOR
-            } else {
-                READY_TIMER_COLOR
-            };
-        }
-        let end_angle =
-            ((current_time - self.time_set) * 2. * (PI as f64) / self.delay) as f32 - PI / 2.;
-        draw_circle_segment(
-            pos.x,
-            pos.y,
-            TIMER_RADIUS,
-            -PI / 2.,
-            end_angle as f32,
-            color,
-        );
-        draw_circle_lines(pos.x, pos.y, TIMER_RADIUS, 2., color)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum MessageStatus {
-    Queued,
-    OnTheWay,
-    Dropped,
-    Delivered,
-}
-
-#[derive(Debug, Clone)]
-pub struct StateMessage {
-    id: String,
-    pos: Vec2,
-    from: Rc<RefCell<StateNode>>,
-    to: Rc<RefCell<StateNode>>,
-    status: MessageStatus,
-    time_sent: f32,
-    time_delivered: f32,
-    data: String,
-    drop: bool,
-}
-
-impl StateMessage {
-    pub fn update(&mut self, global_speed: f32, current_time: f32) {
-        let direction = self.to.borrow().pos - self.pos;
-        let travel_time_left = self.time_delivered - current_time;
-        let mut own_speed = if !self.drop {
-            1.0 / (FPS * travel_time_left / direction.length())
-        } else {
-            1.0 / (FPS * 3.0 / direction.length())
-        };
-        if own_speed < 0. {
-            own_speed = MAX_MESSAGE_SPEED;
-        }
-        self.pos += direction.normalize() * own_speed * global_speed;
-    }
-
-    pub fn draw(&self) {
-        let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
-        let color =
-            if self.drop && calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.4 {
-                RED
-            } else {
-                BLUE
-            };
-        draw_circle(self.pos.x, self.pos.y, MESSAGE_RADIUS, color);
-    }
-
-    pub fn is_delivered(&self) -> bool {
-        if !self.drop {
-            calc_dist(self.pos, self.to.borrow().pos) < 5.0
-        } else {
-            let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
-            calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7
-        }
-    }
-
-    pub fn update_start_pos(&mut self) {
-        self.pos = self.from.borrow().pos;
-    }
-
-    pub fn update_status(&mut self) {
-        if self.is_delivered() {
-            self.status = if self.drop {
-                MessageStatus::Dropped
-            } else {
-                MessageStatus::Delivered
-            };
-        }
-    }
-
-    pub fn set_status(&mut self, status: MessageStatus) {
-        self.status = status;
     }
 }

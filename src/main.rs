@@ -4,7 +4,7 @@ mod visualization;
 use std::env;
 
 use macroquad::prelude::*;
-use visualization::{event_controller::EventController, state::State};
+use visualization::{event_controller::EventController, state::state::State};
 
 #[macroquad::main("Based on history")]
 async fn main() {

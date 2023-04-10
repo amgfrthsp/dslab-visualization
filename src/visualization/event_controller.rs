@@ -4,7 +4,7 @@ use std::{collections::HashMap, f32::consts::PI};
 
 use crate::logs::log_entities::*;
 
-use super::state::State;
+use super::state::state::State;
 use super::utilities::CIRCLE_RADIUS;
 
 #[derive(Debug)]
