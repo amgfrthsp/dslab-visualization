@@ -166,7 +166,7 @@ impl State {
             }
         }
         for (_, node) in &mut self.nodes {
-            self.hovered_timer = node.borrow_mut().update(self.current_time);
+            node.borrow_mut().update(self.current_time);
         }
         for (_, msg) in &mut self.travelling_messages {
             msg.borrow_mut()
@@ -263,6 +263,12 @@ impl State {
                     .insert(self.selected_node.clone().unwrap(), true);
             }
             self.selected_node = None;
+        }
+        for (_, node) in &self.nodes {
+            self.hovered_timer = node.borrow().check_for_hovered_timer();
+            if self.hovered_timer.is_some() {
+                break;
+            }
         }
     }
 
@@ -375,8 +381,7 @@ impl StateNode {
         self.pos = new_pos;
     }
 
-    pub fn update(&mut self, current_time: f64) -> Option<StateTimer> {
-        let mut hovered_timer: Option<StateTimer> = None;
+    pub fn update(&mut self, current_time: f64) {
         for timer in &mut self.timers {
             if timer.k == -1 {
                 if !self.free_timer_slots.is_empty() {
@@ -385,12 +390,19 @@ impl StateNode {
                 }
             } else if current_time >= timer.time_removed + 1.5 {
                 self.free_timer_slots.push_back(timer.k as usize);
-            } else if timer.check_hovered(self.pos) {
-                hovered_timer = Some(timer.clone());
             }
         }
         self.timers
             .retain(|timer| current_time < timer.time_removed + 1.5);
+    }
+
+    pub fn check_for_hovered_timer(&self) -> Option<StateTimer> {
+        let mut hovered_timer: Option<StateTimer> = None;
+        for timer in &self.timers {
+            if timer.check_hovered(self.pos) {
+                hovered_timer = Some(timer.clone());
+            }
+        }
         return hovered_timer;
     }
 
