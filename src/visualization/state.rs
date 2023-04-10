@@ -1,12 +1,11 @@
 use std::{
     cell::RefCell,
-    cmp::min,
     collections::{HashMap, VecDeque},
     f32::consts::PI,
     rc::Rc,
 };
 
-use macroquad::prelude::{camera::mouse, *};
+use macroquad::prelude::*;
 
 use super::utilities::*;
 
