@@ -350,6 +350,18 @@ impl State {
                             });
                             ui.set_max_height(f32::INFINITY);
                         });
+                        ui.collapsing("Current timers", |ui| {
+                            ui.set_max_height(screen_height() * 0.3);
+                            ScrollArea::vertical().show(ui, |ui| {
+                                for timer in &node.timers {
+                                    ui.label(format!("Timer {}", timer.id));
+                                    ui.label(format!("Time set: {}", timer.time_set));
+                                    ui.label(format!("Delay: {}", timer.delay));
+                                    ui.separator();
+                                }
+                            });
+                            ui.set_max_height(f32::INFINITY);
+                        });
                     });
             }
             for (msg_id, show_window) in &mut self.ui_data.show_msg_windows {
