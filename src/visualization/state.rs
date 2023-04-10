@@ -12,7 +12,7 @@ use super::utilities::*;
 #[derive(Clone, Debug)]
 pub enum StateEvent {
     AddNode(StateNode),
-    SendMessage(StateMessage),
+    SendMessage(String),
     NodeUp(String),
     NodeDown(String),
     TimerSet(StateTimer),
@@ -32,7 +32,8 @@ pub struct UIData {
 
 pub struct State {
     nodes: HashMap<String, Rc<RefCell<StateNode>>>,
-    messages: HashMap<String, StateMessage>,
+    travelling_messages: HashMap<String, Rc<RefCell<StateMessage>>>,
+    all_messages: HashMap<String, Rc<RefCell<StateMessage>>>,
     event_queue: VecDeque<EventQueueItem>,
     current_time: f64,
     last_updated: f64,
@@ -49,7 +50,8 @@ impl State {
     pub fn new() -> Self {
         Self {
             nodes: HashMap::new(),
-            messages: HashMap::new(),
+            travelling_messages: HashMap::new(),
+            all_messages: HashMap::new(),
             event_queue: VecDeque::new(),
             current_time: 0.0,
             last_updated: 0.0,
@@ -71,6 +73,8 @@ impl State {
             id: id,
             pos: pos,
             alive: true,
+            sent_messages: Vec::new(),
+            received_messages: Vec::new(),
             timers: VecDeque::new(),
             free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
         };
@@ -89,17 +93,21 @@ impl State {
         data: String,
         duration: f32,
     ) {
+        let msg = StateMessage {
+            id: id.clone(),
+            pos: self.nodes.get(from).unwrap().borrow().pos,
+            from: Rc::clone(self.nodes.get(from).unwrap()),
+            to: Rc::clone(self.nodes.get(to).unwrap()),
+            status: MessageStatus::Queued,
+            time_delivered: timestamp as f32 + duration,
+            data,
+            drop: duration <= 0.0,
+        };
+        self.all_messages
+            .insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
-            event: StateEvent::SendMessage(StateMessage {
-                id: id,
-                pos: self.nodes.get(from).unwrap().borrow().pos,
-                from: self.nodes.get(from).unwrap().clone(),
-                to: Rc::clone(self.nodes.get(to).unwrap()),
-                time_delivered: timestamp as f32 + duration,
-                data,
-                drop: duration <= 0.0,
-            }),
+            event: StateEvent::SendMessage(id.clone()),
         });
     }
 
@@ -160,18 +168,21 @@ impl State {
         for (_, node) in &mut self.nodes {
             self.hovered_timer = node.borrow_mut().update(self.current_time);
         }
-        for (_, msg) in &mut self.messages {
-            msg.update(self.global_speed, self.current_time as f32);
+        for (_, msg) in &mut self.travelling_messages {
+            msg.borrow_mut()
+                .update(self.global_speed, self.current_time as f32);
+            msg.borrow_mut().update_status();
         }
-        self.messages.retain(|_, msg| !msg.is_delivered());
+        self.travelling_messages
+            .retain(|_, msg| !msg.borrow().is_delivered());
     }
 
     pub fn draw(&mut self) {
         for (_, node) in &self.nodes {
             node.borrow().draw(self.current_time);
         }
-        for (_, msg) in &self.messages {
-            msg.draw();
+        for (_, msg) in &self.travelling_messages {
+            msg.borrow().draw();
         }
         self.draw_time();
         self.draw_speed();
@@ -256,9 +267,9 @@ impl State {
     }
 
     pub fn get_msg_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
-        for (_, msg) in &self.messages {
-            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), msg.pos) < MESSAGE_RADIUS {
-                return Some(msg.id.clone());
+        for (_, msg) in &self.travelling_messages {
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), msg.borrow().pos) < MESSAGE_RADIUS {
+                return Some(msg.borrow().id.clone());
             }
         }
         return None;
@@ -301,10 +312,10 @@ impl State {
                     });
             }
             for (msg_id, show_window) in &mut self.ui_data.show_msg_windows {
-                if !self.messages.contains_key(msg_id) {
+                if !self.travelling_messages.contains_key(msg_id) {
                     continue;
                 }
-                let msg = self.messages.get(msg_id).unwrap();
+                let msg = self.travelling_messages.get(msg_id).unwrap().borrow();
                 egui::Window::new(format!("Message {}", msg_id))
                     .open(show_window)
                     .show(egui_ctx, |ui| {
@@ -325,9 +336,14 @@ impl State {
                 self.nodes
                     .insert(node.id.clone(), Rc::new(RefCell::new(node)));
             }
-            StateEvent::SendMessage(mut msg) => {
+            StateEvent::SendMessage(msg_id) => {
+                self.travelling_messages.insert(
+                    msg_id.clone(),
+                    Rc::clone(self.all_messages.get(&msg_id).unwrap()),
+                );
+                let mut msg = self.all_messages.get_mut(&msg_id).unwrap().borrow_mut();
                 msg.update_start_pos();
-                self.messages.insert(msg.id.clone(), msg.clone());
+                msg.set_status(MessageStatus::OnTheWay);
             }
             StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
             StateEvent::NodeUp(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_alive(),
@@ -348,6 +364,8 @@ pub struct StateNode {
     id: String,
     pos: Vec2,
     alive: bool,
+    sent_messages: Vec<Rc<RefCell<StateMessage>>>,
+    received_messages: Vec<Rc<RefCell<StateMessage>>>,
     timers: VecDeque<StateTimer>,
     free_timer_slots: VecDeque<usize>,
 }
@@ -463,12 +481,21 @@ impl StateTimer {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum MessageStatus {
+    Queued,
+    OnTheWay,
+    Dropped,
+    Delivered,
+}
+
 #[derive(Debug, Clone)]
 pub struct StateMessage {
     id: String,
     pos: Vec2,
     from: Rc<RefCell<StateNode>>,
     to: Rc<RefCell<StateNode>>,
+    status: MessageStatus,
     time_delivered: f32,
     data: String,
     drop: bool,
@@ -501,15 +528,31 @@ impl StateMessage {
     }
 
     pub fn is_delivered(&self) -> bool {
+        let delivered: bool;
         if !self.drop {
-            calc_dist(self.pos, self.to.borrow().pos) < 5.0
+            delivered = calc_dist(self.pos, self.to.borrow().pos) < 5.0;
         } else {
             let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
-            calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7
+            delivered = calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7;
         }
+        return delivered;
     }
 
     pub fn update_start_pos(&mut self) {
         self.pos = self.from.borrow().pos;
+    }
+
+    pub fn update_status(&mut self) {
+        if self.is_delivered() {
+            self.status = if self.drop {
+                MessageStatus::Dropped
+            } else {
+                MessageStatus::Delivered
+            };
+        }
+    }
+
+    pub fn set_status(&mut self, status: MessageStatus) {
+        self.status = status;
     }
 }
