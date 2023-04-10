@@ -5,6 +5,7 @@ use std::{
     rc::Rc,
 };
 
+use egui::ScrollArea;
 use macroquad::prelude::*;
 
 use super::utilities::*;
@@ -99,6 +100,7 @@ impl State {
             from: Rc::clone(self.nodes.get(from).unwrap()),
             to: Rc::clone(self.nodes.get(to).unwrap()),
             status: MessageStatus::Queued,
+            time_sent: timestamp as f32,
             time_delivered: timestamp as f32 + duration,
             data,
             drop: duration <= 0.0,
@@ -172,6 +174,14 @@ impl State {
             msg.borrow_mut()
                 .update(self.global_speed, self.current_time as f32);
             msg.borrow_mut().update_status();
+            let im_msg = msg.borrow();
+            if im_msg.is_delivered() && !im_msg.drop {
+                im_msg
+                    .to
+                    .borrow_mut()
+                    .received_messages
+                    .push(im_msg.id.clone());
+            }
         }
         self.travelling_messages
             .retain(|_, msg| !msg.borrow().is_delivered());
@@ -303,18 +313,43 @@ impl State {
                     });
             }
             for (node_id, show_window) in &mut self.ui_data.show_node_windows {
-                let node = self.nodes.get(node_id).unwrap();
+                let node = self.nodes.get(node_id).unwrap().borrow();
                 egui::Window::new(format!("Node {}", node_id))
                     .open(show_window)
                     .show(egui_ctx, |ui| {
                         ui.label(format!(
                             "Status: {}",
-                            if node.borrow().alive {
-                                "Alive"
-                            } else {
-                                "Crashed"
-                            }
+                            if node.alive { "Alive" } else { "Crashed" }
                         ));
+                        ui.collapsing("Sent messages", |ui| {
+                            ui.set_max_height(screen_height() * 0.3);
+                            ScrollArea::vertical().show(ui, |ui| {
+                                for msg_id in &node.sent_messages {
+                                    let msg = self.all_messages.get(msg_id).unwrap().borrow();
+                                    ui.label(format!("Message {}", msg.id));
+                                    ui.label(format!("To: {}", msg.to.borrow().id));
+                                    ui.label(format!("Sent at: {}", msg.time_sent));
+                                    ui.label(format!("Status: {:?}", msg.status));
+                                    ui.label(format!("Data: {}", msg.data));
+                                    ui.separator();
+                                }
+                            });
+                            ui.set_max_height(f32::INFINITY);
+                        });
+                        ui.collapsing("Received messages", |ui| {
+                            ui.set_max_height(screen_height() * 0.3);
+                            ScrollArea::vertical().show(ui, |ui| {
+                                for msg_id in &node.received_messages {
+                                    let msg = self.all_messages.get(msg_id).unwrap().borrow();
+                                    ui.label(format!("Message {}", msg.id));
+                                    ui.label(format!("From: {}", msg.from.borrow().id));
+                                    ui.label(format!("Received at: {}", msg.time_delivered));
+                                    ui.label(format!("Data: {}", msg.data));
+                                    ui.separator();
+                                }
+                            });
+                            ui.set_max_height(f32::INFINITY);
+                        });
                     });
             }
             for (msg_id, show_window) in &mut self.ui_data.show_msg_windows {
@@ -350,6 +385,7 @@ impl State {
                 let mut msg = self.all_messages.get_mut(&msg_id).unwrap().borrow_mut();
                 msg.update_start_pos();
                 msg.set_status(MessageStatus::OnTheWay);
+                msg.from.borrow_mut().sent_messages.push(msg.id.clone());
             }
             StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
             StateEvent::NodeUp(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_alive(),
@@ -370,8 +406,8 @@ pub struct StateNode {
     id: String,
     pos: Vec2,
     alive: bool,
-    sent_messages: Vec<Rc<RefCell<StateMessage>>>,
-    received_messages: Vec<Rc<RefCell<StateMessage>>>,
+    sent_messages: Vec<String>,
+    received_messages: Vec<String>,
     timers: VecDeque<StateTimer>,
     free_timer_slots: VecDeque<usize>,
 }
@@ -509,6 +545,7 @@ pub struct StateMessage {
     from: Rc<RefCell<StateNode>>,
     to: Rc<RefCell<StateNode>>,
     status: MessageStatus,
+    time_sent: f32,
     time_delivered: f32,
     data: String,
     drop: bool,
