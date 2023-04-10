@@ -401,6 +401,7 @@ impl StateNode {
         for timer in &self.timers {
             if timer.check_hovered(self.pos) {
                 hovered_timer = Some(timer.clone());
+                break;
             }
         }
         return hovered_timer;
@@ -540,14 +541,12 @@ impl StateMessage {
     }
 
     pub fn is_delivered(&self) -> bool {
-        let delivered: bool;
         if !self.drop {
-            delivered = calc_dist(self.pos, self.to.borrow().pos) < 5.0;
+            calc_dist(self.pos, self.to.borrow().pos) < 5.0
         } else {
             let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
-            delivered = calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7;
+            calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7
         }
-        return delivered;
     }
 
     pub fn update_start_pos(&mut self) {
