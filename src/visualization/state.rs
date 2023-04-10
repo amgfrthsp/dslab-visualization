@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use macroquad::prelude::*;
+use macroquad::prelude::{camera::mouse, *};
 
 use super::utilities::*;
 
@@ -42,6 +42,7 @@ pub struct State {
     last_clicked: f64,
     selected_node: Option<String>,
     selected_mouse_position: Vec2,
+    hovered_timer: Option<StateTimer>,
     ui_data: UIData,
 }
 
@@ -58,6 +59,7 @@ impl State {
             last_clicked: -1.,
             selected_node: None,
             selected_mouse_position: Vec2::new(0., 0.),
+            hovered_timer: None,
             ui_data: UIData {
                 show_node_windows: HashMap::new(),
                 show_msg_windows: HashMap::new(),
@@ -157,7 +159,7 @@ impl State {
             }
         }
         for (_, node) in &mut self.nodes {
-            node.borrow_mut().update(self.current_time);
+            self.hovered_timer = node.borrow_mut().update(self.current_time);
         }
         for (_, msg) in &mut self.messages {
             msg.update(self.global_speed, self.current_time as f32);
@@ -274,6 +276,16 @@ impl State {
 
     pub fn draw_ui(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
+            if let Some(timer) = &self.hovered_timer {
+                egui::Window::new(format!("Timer"))
+                    .default_pos(mouse_position())
+                    .show(egui_ctx, |ui| {
+                        ui.label(format!("Id: {}", timer.id));
+                        ui.label(format!("Timer delay: {}", timer.delay));
+                        ui.label(format!("Time set: {}", timer.time_set));
+                        ui.label(format!("Time removed: {}", timer.time_removed));
+                    });
+            }
             for (node_id, show_window) in &mut self.ui_data.show_node_windows {
                 let node = self.nodes.get(node_id).unwrap();
                 egui::Window::new(format!("Node {}", node_id))
@@ -346,7 +358,8 @@ impl StateNode {
         self.pos = new_pos;
     }
 
-    pub fn update(&mut self, current_time: f64) {
+    pub fn update(&mut self, current_time: f64) -> Option<StateTimer> {
+        let mut hovered_timer: Option<StateTimer> = None;
         for timer in &mut self.timers {
             if timer.k == -1 {
                 if !self.free_timer_slots.is_empty() {
@@ -355,10 +368,13 @@ impl StateNode {
                 }
             } else if current_time >= timer.time_removed + 1.5 {
                 self.free_timer_slots.push_back(timer.k as usize);
+            } else if timer.check_hovered(self.pos) {
+                hovered_timer = Some(timer.clone());
             }
         }
         self.timers
             .retain(|timer| current_time < timer.time_removed + 1.5);
+        return hovered_timer;
     }
 
     pub fn draw(&self, current_time: f64) {
@@ -414,9 +430,18 @@ pub struct StateTimer {
 }
 
 impl StateTimer {
-    pub fn draw(&self, node_pos: Vec2, current_time: f64) {
+    pub fn get_position(&self, node_pos: Vec2) -> Vec2 {
         let angle = (2.0 * PI / (TIMERS_MAX_NUMBER as f32)) * (self.k as f32);
-        let pos = node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.);
+        return node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.);
+    }
+
+    pub fn check_hovered(&self, node_pos: Vec2) -> bool {
+        let mouse_pos = Vec2::from(mouse_position());
+        return calc_dist(self.get_position(node_pos), mouse_pos) <= TIMER_RADIUS;
+    }
+
+    pub fn draw(&self, node_pos: Vec2, current_time: f64) {
+        let pos = self.get_position(node_pos);
         let mut color = TIMER_COLOR;
         if current_time >= self.time_removed {
             color = if self.time_removed < self.time_set + self.delay {
