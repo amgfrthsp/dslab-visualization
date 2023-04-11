@@ -97,7 +97,7 @@ impl State {
 
     pub fn send_message(
         &mut self,
-        id: &str,
+        id: String,
         timestamp: f64,
         from: &str,
         to: &str,
@@ -106,7 +106,7 @@ impl State {
     ) {
         let from_node = self.nodes.get(from).unwrap();
         let msg = StateMessage {
-            id: id.to_string(),
+            id: id.clone(),
             pos: from_node.borrow().pos,
             from: Rc::clone(from_node),
             to: Rc::clone(self.nodes.get(to).unwrap()),
@@ -116,11 +116,10 @@ impl State {
             data,
             drop: duration <= 0.0,
         };
-        self.messages
-            .insert(id.to_string(), Rc::new(RefCell::new(msg)));
+        self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
-            event: StateEvent::SendMessage(id.to_string()),
+            event: StateEvent::SendMessage(id),
         });
     }
 
@@ -226,8 +225,15 @@ impl State {
                     .push(mut_msg.id.clone());
             }
         }
-        self.travelling_messages
-            .retain(|_, msg| !msg.borrow().is_delivered());
+        self.travelling_messages.retain(|_, msg| {
+            let msg_borrow = msg.borrow();
+            if !msg_borrow.is_delivered()
+                && (!msg_borrow.drop && self.current_time < msg_borrow.time_delivered.into())
+            {
+                return true;
+            }
+            false
+        });
     }
 
     pub fn draw(&mut self) {
