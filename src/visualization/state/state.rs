@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use egui::{Checkbox, ScrollArea};
+use egui::{Checkbox, ScrollArea, Slider};
 use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
@@ -371,6 +371,7 @@ impl State {
         egui_macroquad::ui(|egui_ctx| {
             egui::Window::new("Settings").show(egui_ctx, |ui| {
                 ui.add(Checkbox::new(&mut self.ui_data.show_timers, "Show timers"));
+                ui.add(Slider::new(&mut self.global_speed, 0.0000..=20.).text("Speed"));
                 ui.collapsing("Show events (messages and timers) for a node:", |ui| {
                     ui.set_max_height(screen_height() * 0.2);
                     for node_id in &self.ui_data.ordered_node_ids {
