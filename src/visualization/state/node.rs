@@ -50,7 +50,7 @@ impl StateNode {
         return hovered_timer;
     }
 
-    pub fn draw(&self, current_time: f64) {
+    pub fn draw(&self, show_events: bool, current_time: f64, show_timers: bool) {
         draw_circle(
             self.pos.x,
             self.pos.y,
@@ -75,11 +75,13 @@ impl StateNode {
             },
         );
 
-        for i in 0..self.timers.len() {
-            if self.timers[i].k == -1 {
-                break;
+        if show_events && show_timers {
+            for i in 0..self.timers.len() {
+                if self.timers[i].k == -1 {
+                    break;
+                }
+                self.timers[i].draw(self.pos, current_time);
             }
-            self.timers[i].draw(self.pos, current_time);
         }
     }
 

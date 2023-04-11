@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use egui::ScrollArea;
+use egui::{Checkbox, ScrollArea};
 use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
@@ -33,12 +33,15 @@ pub struct EventQueueItem {
 
 #[derive(Clone)]
 pub struct UIData {
+    ordered_node_ids: Vec<String>,
+    show_events_for_node: HashMap<String, bool>,
     show_node_windows: HashMap<String, bool>,
     show_msg_windows: HashMap<String, bool>,
     last_clicked: f64,
     selected_node: Option<String>,
     selected_mouse_position: Vec2,
     hovered_timer: Option<StateTimer>,
+    show_timers: bool,
 }
 
 pub struct State {
@@ -67,19 +70,22 @@ impl State {
             paused: false,
             global_speed: 1.0,
             ui_data: UIData {
+                ordered_node_ids: Vec::new(),
+                show_events_for_node: HashMap::new(),
                 show_node_windows: HashMap::new(),
                 show_msg_windows: HashMap::new(),
                 last_clicked: -1.,
                 selected_node: None,
                 selected_mouse_position: Vec2::new(0., 0.),
                 hovered_timer: None,
+                show_timers: true,
             },
         }
     }
 
     pub fn add_node(&mut self, timestamp: f64, id: String, pos: Vec2) {
         let node = StateNode {
-            id: id,
+            id: id.clone(),
             pos: pos,
             alive: true,
             local_messages_sent: Vec::new(),
@@ -89,8 +95,9 @@ impl State {
             timers: VecDeque::new(),
             free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
         };
-        self.nodes
-            .insert(node.id.clone(), Rc::new(RefCell::new(node)));
+        self.nodes.insert(id.clone(), Rc::new(RefCell::new(node)));
+        self.ui_data.show_events_for_node.insert(id.clone(), true);
+        self.ui_data.ordered_node_ids.push(id.clone());
         /*self.event_queue
         .push_back((timestamp, StateEvent::AddNode(StateNode { id, pos })));*/
     }
@@ -237,11 +244,20 @@ impl State {
     }
 
     pub fn draw(&mut self) {
-        for (_, node) in &self.nodes {
-            node.borrow().draw(self.current_time);
+        for (node_id, node) in &self.nodes {
+            let show_events = *self.ui_data.show_events_for_node.get(node_id).unwrap();
+            node.borrow()
+                .draw(show_events, self.current_time, self.ui_data.show_timers);
         }
         for (_, msg) in &self.travelling_messages {
-            msg.borrow().draw();
+            let msg_borrowed = msg.borrow();
+            let from_id = &msg_borrowed.from.borrow().id;
+            let to_id = &msg_borrowed.to.borrow().id;
+            let show_message = *self.ui_data.show_events_for_node.get(from_id).unwrap()
+                || *self.ui_data.show_events_for_node.get(to_id).unwrap();
+            if show_message {
+                msg_borrowed.draw();
+            }
         }
         self.draw_time();
         self.draw_speed();
@@ -323,10 +339,12 @@ impl State {
             }
             self.ui_data.selected_node = None;
         }
-        for (_, node) in &self.nodes {
-            self.ui_data.hovered_timer = node.borrow().check_for_hovered_timer();
-            if self.ui_data.hovered_timer.is_some() {
-                break;
+        if self.ui_data.show_timers {
+            for (_, node) in &self.nodes {
+                self.ui_data.hovered_timer = node.borrow().check_for_hovered_timer();
+                if self.ui_data.hovered_timer.is_some() {
+                    break;
+                }
             }
         }
     }
@@ -351,8 +369,21 @@ impl State {
 
     pub fn draw_ui(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
+            egui::Window::new("Settings").show(egui_ctx, |ui| {
+                ui.add(Checkbox::new(&mut self.ui_data.show_timers, "Show timers"));
+                ui.collapsing("Show events (messages and timers) for a node:", |ui| {
+                    ui.set_max_height(screen_height() * 0.2);
+                    for node_id in &self.ui_data.ordered_node_ids {
+                        let show_events =
+                            self.ui_data.show_events_for_node.get_mut(node_id).unwrap();
+                        ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
+                    }
+                    ui.set_max_height(f32::INFINITY);
+                });
+            });
+
             if let Some(timer) = &self.ui_data.hovered_timer {
-                egui::Window::new(format!("Timer"))
+                egui::Window::new("Timer")
                     .default_pos(mouse_position())
                     .show(egui_ctx, |ui| {
                         ui.label(format!("Id: {}", timer.id));
