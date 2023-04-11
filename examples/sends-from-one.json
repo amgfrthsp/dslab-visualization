@@ -2,7 +2,7 @@
   "node_cnt": 3,
   "events": [
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 0.0,
         "msg": {
           "id": "0",
@@ -13,13 +13,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 3.0,
         "id": "0"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 4.0,
         "msg": {
           "id": "1",
@@ -30,13 +30,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 7.0,
         "id": "1"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 8.0,
         "msg": {
           "id": "2",
@@ -47,13 +47,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 11.0,
         "id": "2"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 12.0,
         "msg": {
           "id": "3",
@@ -64,13 +64,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 15.0,
         "id": "3"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 16.0,
         "msg": {
           "id": "4",
@@ -81,13 +81,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 19.0,
         "id": "4"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 20.0,
         "msg": {
           "id": "5",
@@ -98,13 +98,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 23.0,
         "id": "5"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 24.0,
         "msg": {
           "id": "6",
@@ -115,13 +115,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 27.0,
         "id": "6"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 28.0,
         "msg": {
           "id": "7",
@@ -132,13 +132,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 31.0,
         "id": "7"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 32.0,
         "msg": {
           "id": "8",
@@ -149,13 +149,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 35.0,
         "id": "8"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 36.0,
         "msg": {
           "id": "9",
@@ -166,13 +166,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 39.0,
         "id": "9"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 40.0,
         "msg": {
           "id": "10",
@@ -183,13 +183,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 43.0,
         "id": "10"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 44.0,
         "msg": {
           "id": "11",
@@ -200,13 +200,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 47.0,
         "id": "11"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 48.0,
         "msg": {
           "id": "12",
@@ -217,13 +217,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 51.0,
         "id": "12"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 52.0,
         "msg": {
           "id": "13",
@@ -234,13 +234,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 55.0,
         "id": "13"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 56.0,
         "msg": {
           "id": "14",
@@ -251,13 +251,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 59.0,
         "id": "14"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 60.0,
         "msg": {
           "id": "15",
@@ -268,13 +268,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 63.0,
         "id": "15"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 64.0,
         "msg": {
           "id": "16",
@@ -285,13 +285,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 67.0,
         "id": "16"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 68.0,
         "msg": {
           "id": "17",
@@ -302,13 +302,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 71.0,
         "id": "17"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 72.0,
         "msg": {
           "id": "18",
@@ -319,13 +319,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 75.0,
         "id": "18"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 76.0,
         "msg": {
           "id": "19",
@@ -336,13 +336,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 79.0,
         "id": "19"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 80.0,
         "msg": {
           "id": "20",
@@ -353,13 +353,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 83.0,
         "id": "20"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 84.0,
         "msg": {
           "id": "21",
@@ -370,13 +370,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 87.0,
         "id": "21"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 88.0,
         "msg": {
           "id": "22",
@@ -387,13 +387,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 91.0,
         "id": "22"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 92.0,
         "msg": {
           "id": "23",
@@ -404,13 +404,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 95.0,
         "id": "23"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 96.0,
         "msg": {
           "id": "24",
@@ -421,13 +421,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 99.0,
         "id": "24"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 100.0,
         "msg": {
           "id": "25",
@@ -438,13 +438,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 103.0,
         "id": "25"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 104.0,
         "msg": {
           "id": "26",
@@ -455,13 +455,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 107.0,
         "id": "26"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 108.0,
         "msg": {
           "id": "27",
@@ -472,13 +472,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 111.0,
         "id": "27"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 112.0,
         "msg": {
           "id": "28",
@@ -489,13 +489,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 115.0,
         "id": "28"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 116.0,
         "msg": {
           "id": "29",
@@ -506,13 +506,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 119.0,
         "id": "29"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 120.0,
         "msg": {
           "id": "30",
@@ -523,13 +523,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 123.0,
         "id": "30"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 124.0,
         "msg": {
           "id": "31",
@@ -540,13 +540,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 127.0,
         "id": "31"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 128.0,
         "msg": {
           "id": "32",
@@ -557,13 +557,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 131.0,
         "id": "32"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 132.0,
         "msg": {
           "id": "33",
@@ -574,13 +574,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 135.0,
         "id": "33"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 136.0,
         "msg": {
           "id": "34",
@@ -591,13 +591,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 139.0,
         "id": "34"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 140.0,
         "msg": {
           "id": "35",
@@ -608,13 +608,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 143.0,
         "id": "35"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 144.0,
         "msg": {
           "id": "36",
@@ -625,13 +625,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 147.0,
         "id": "36"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 148.0,
         "msg": {
           "id": "37",
@@ -642,13 +642,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 151.0,
         "id": "37"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 152.0,
         "msg": {
           "id": "38",
@@ -659,13 +659,13 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 155.0,
         "id": "38"
       }
     },
     {
-      "TypeSent": {
+      "TypeMessageSent": {
         "timestamp": 156.0,
         "msg": {
           "id": "39",
@@ -676,7 +676,7 @@
       }
     },
     {
-      "TypeReceived": {
+      "TypeMessageReceived": {
         "timestamp": 159.0,
         "id": "39"
       }

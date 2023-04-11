@@ -7,8 +7,12 @@ use std::{
 use egui::ScrollArea;
 use macroquad::prelude::*;
 
-use crate::visualization::utilities::*;
+use crate::{
+    logs::log_entities::{EventLocalMessageReceived, EventLocalMessageSent},
+    visualization::utilities::*,
+};
 
+use super::local_message::*;
 use super::message::*;
 use super::node::*;
 use super::timer::*;
@@ -17,6 +21,8 @@ use super::timer::*;
 pub enum StateEvent {
     AddNode(StateNode),
     SendMessage(String),
+    SendLocalMessage(String),
+    ReceiveLocalMessage(String),
     NodeUp(String),
     NodeDown(String),
     TimerSet(StateTimer),
@@ -41,7 +47,8 @@ pub struct UIData {
 pub struct State {
     nodes: HashMap<String, Rc<RefCell<StateNode>>>,
     travelling_messages: HashMap<String, Rc<RefCell<StateMessage>>>,
-    all_messages: HashMap<String, Rc<RefCell<StateMessage>>>,
+    messages: HashMap<String, Rc<RefCell<StateMessage>>>,
+    local_messages: HashMap<String, StateLocalMessage>,
     event_queue: VecDeque<EventQueueItem>,
     current_time: f64,
     last_updated: f64,
@@ -55,7 +62,8 @@ impl State {
         Self {
             nodes: HashMap::new(),
             travelling_messages: HashMap::new(),
-            all_messages: HashMap::new(),
+            messages: HashMap::new(),
+            local_messages: HashMap::new(),
             event_queue: VecDeque::new(),
             current_time: 0.0,
             last_updated: 0.0,
@@ -77,8 +85,10 @@ impl State {
             id: id,
             pos: pos,
             alive: true,
-            sent_messages: Vec::new(),
-            received_messages: Vec::new(),
+            local_messages_sent: Vec::new(),
+            local_messages_received: Vec::new(),
+            messages_sent: Vec::new(),
+            messages_received: Vec::new(),
             timers: VecDeque::new(),
             free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
         };
@@ -108,11 +118,43 @@ impl State {
             data,
             drop: duration <= 0.0,
         };
-        self.all_messages
-            .insert(id.clone(), Rc::new(RefCell::new(msg)));
+        self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
             event: StateEvent::SendMessage(id.clone()),
+        });
+    }
+
+    pub fn process_local_message(
+        &mut self,
+        timestamp: f64,
+        id: String,
+        node_id: String,
+        data: String,
+        is_sent: bool,
+    ) {
+        let msg_type: LocalMessageType;
+        let event: StateEvent;
+
+        if is_sent {
+            msg_type = LocalMessageType::Sent;
+            event = StateEvent::SendLocalMessage(id.clone());
+        } else {
+            msg_type = LocalMessageType::Received;
+            event = StateEvent::ReceiveLocalMessage(id.clone());
+        }
+        let msg = StateLocalMessage {
+            id: id.clone(),
+            timestamp,
+            node_id,
+            data,
+            msg_type,
+        };
+        self.local_messages.insert(id, msg);
+
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: event,
         });
     }
 
@@ -182,7 +224,7 @@ impl State {
                 im_msg
                     .to
                     .borrow_mut()
-                    .received_messages
+                    .messages_received
                     .push(im_msg.id.clone());
             }
         }
@@ -327,8 +369,8 @@ impl State {
                         ui.collapsing("Sent messages", |ui| {
                             ui.set_max_height(screen_height() * 0.3);
                             ScrollArea::vertical().show(ui, |ui| {
-                                for msg_id in &node.sent_messages {
-                                    let msg = self.all_messages.get(msg_id).unwrap().borrow();
+                                for msg_id in &node.messages_sent {
+                                    let msg = self.messages.get(msg_id).unwrap().borrow();
                                     ui.label(format!("Message {}", msg.id));
                                     ui.label(format!("To: {}", msg.to.borrow().id));
                                     ui.label(format!("Sent at: {}", msg.time_sent));
@@ -342,8 +384,8 @@ impl State {
                         ui.collapsing("Received messages", |ui| {
                             ui.set_max_height(screen_height() * 0.3);
                             ScrollArea::vertical().show(ui, |ui| {
-                                for msg_id in &node.received_messages {
-                                    let msg = self.all_messages.get(msg_id).unwrap().borrow();
+                                for msg_id in &node.messages_received {
+                                    let msg = self.messages.get(msg_id).unwrap().borrow();
                                     ui.label(format!("Message {}", msg.id));
                                     ui.label(format!("From: {}", msg.from.borrow().id));
                                     ui.label(format!("Received at: {}", msg.time_delivered));
@@ -395,12 +437,12 @@ impl State {
             StateEvent::SendMessage(msg_id) => {
                 self.travelling_messages.insert(
                     msg_id.clone(),
-                    Rc::clone(self.all_messages.get(&msg_id).unwrap()),
+                    Rc::clone(self.messages.get(&msg_id).unwrap()),
                 );
-                let mut msg = self.all_messages.get_mut(&msg_id).unwrap().borrow_mut();
+                let mut msg = self.messages.get_mut(&msg_id).unwrap().borrow_mut();
                 msg.update_start_pos();
                 msg.set_status(MessageStatus::OnTheWay);
-                msg.from.borrow_mut().sent_messages.push(msg.id.clone());
+                msg.from.borrow_mut().messages_sent.push(msg.id.clone());
             }
             StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
             StateEvent::NodeUp(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_alive(),
@@ -411,6 +453,24 @@ impl State {
                 .borrow_mut()
                 .timers
                 .push_back(timer),
+            StateEvent::SendLocalMessage(id) => {
+                let msg = self.local_messages.get_mut(&id).unwrap();
+                self.nodes
+                    .get_mut(&msg.node_id)
+                    .unwrap()
+                    .borrow_mut()
+                    .local_messages_sent
+                    .push(msg.clone());
+            }
+            StateEvent::ReceiveLocalMessage(id) => {
+                let msg = self.local_messages.get_mut(&id).unwrap();
+                self.nodes
+                    .get_mut(&msg.node_id)
+                    .unwrap()
+                    .borrow_mut()
+                    .local_messages_received
+                    .push(msg.clone());
+            }
         }
         true
     }

@@ -4,15 +4,17 @@ use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
 
-use super::timer::*;
+use super::{local_message::StateLocalMessage, timer::*};
 
 #[derive(Debug, Clone)]
 pub struct StateNode {
     pub id: String,
     pub pos: Vec2,
     pub alive: bool,
-    pub sent_messages: Vec<String>,
-    pub received_messages: Vec<String>,
+    pub local_messages_sent: Vec<StateLocalMessage>,
+    pub local_messages_received: Vec<StateLocalMessage>,
+    pub messages_sent: Vec<String>,
+    pub messages_received: Vec<String>,
     pub timers: VecDeque<StateTimer>,
     pub free_timer_slots: VecDeque<usize>,
 }

@@ -10,6 +10,7 @@ use super::utilities::CIRCLE_RADIUS;
 #[derive(Debug)]
 pub enum ControllerStateCommand {
     SendMessage(String),
+    ProcessLocalMessage(String),
     NodeUp(String),
     NodeDown(String),
     AddNode(ControllerNode),
@@ -17,6 +18,7 @@ pub enum ControllerStateCommand {
 }
 
 pub struct EventController {
+    local_messages: HashMap<String, ControllerLocalMessage>,
     messages: HashMap<String, ControllerMessage>,
     timers: HashMap<String, ControllerTimer>,
     commands: Vec<(f64, ControllerStateCommand)>,
@@ -25,6 +27,7 @@ pub struct EventController {
 impl EventController {
     pub fn new() -> Self {
         Self {
+            local_messages: HashMap::new(),
             messages: HashMap::new(),
             timers: HashMap::new(),
             commands: vec![],
@@ -50,7 +53,35 @@ impl EventController {
 
         for event in log.events {
             match event {
-                Event::TypeSent(e) => {
+                Event::TypeLocalMessageSent(e) => {
+                    let msg = ControllerLocalMessage {
+                        id: e.msg.id.clone(),
+                        node_id: e.msg.node_id,
+                        data: e.msg.data,
+                        timestampt: e.timestamp,
+                        msg_type: LocalMessageType::Sent,
+                    };
+                    self.local_messages.insert(e.msg.id.clone(), msg);
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::ProcessLocalMessage(e.msg.id),
+                    ));
+                }
+                Event::TypeLocalMessageReceived(e) => {
+                    let msg = ControllerLocalMessage {
+                        id: e.msg.id.clone(),
+                        node_id: e.msg.node_id,
+                        data: e.msg.data,
+                        timestampt: e.timestamp,
+                        msg_type: LocalMessageType::Received,
+                    };
+                    self.local_messages.insert(e.msg.id.clone(), msg);
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::ProcessLocalMessage(e.msg.id),
+                    ));
+                }
+                Event::TypeMessageSent(e) => {
                     let msg = ControllerMessage {
                         id: e.msg.id.clone(),
                         from: e.msg.from,
@@ -63,7 +94,7 @@ impl EventController {
                     self.commands
                         .push((e.timestamp, ControllerStateCommand::SendMessage(e.msg.id)));
                 }
-                Event::TypeReceived(e) => {
+                Event::TypeMessageReceived(e) => {
                     self.messages.get_mut(&e.id).unwrap().time_received = e.timestamp;
                 }
                 Event::TypeNodeDown(e) => {
@@ -110,6 +141,21 @@ impl EventController {
                         (msg.time_received - msg.time_sent) as f32,
                     );
                 }
+                ControllerStateCommand::ProcessLocalMessage(id) => {
+                    let msg = self.local_messages.get(id).unwrap();
+                    let is_sent: bool;
+                    match msg.msg_type {
+                        LocalMessageType::Received => is_sent = false,
+                        LocalMessageType::Sent => is_sent = true,
+                    }
+                    state.process_local_message(
+                        msg.timestampt,
+                        msg.id.clone(),
+                        msg.node_id.clone(),
+                        msg.data.clone(),
+                        is_sent,
+                    );
+                }
                 ControllerStateCommand::NodeDown(id) => {
                     state.process_node_down(command.0, id.to_string())
                 }
@@ -129,6 +175,19 @@ impl EventController {
             }
         }
     }
+}
+
+pub enum LocalMessageType {
+    Sent,
+    Received,
+}
+
+pub struct ControllerLocalMessage {
+    id: String,
+    node_id: String,
+    data: String,
+    timestampt: f64,
+    msg_type: LocalMessageType,
 }
 
 pub struct ControllerMessage {

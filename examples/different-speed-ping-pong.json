@@ -2,7 +2,7 @@
     "node_cnt": 2,
     "events": [
         {
-            "TypeSent": {
+            "TypeMessageSent": {
                 "timestamp": 1.0,
                 "msg": {
                     "id": "0",
@@ -13,13 +13,13 @@
             }
         },
         {
-            "TypeReceived": {
+            "TypeMessageReceived": {
                 "timestamp": 2.0,
                 "id": "0"
             }
         },
         {
-            "TypeSent": {
+            "TypeMessageSent": {
                 "timestamp": 3,
                 "msg": {
                     "id": "1",
@@ -30,13 +30,13 @@
             }
         },
         {
-            "TypeReceived": {
+            "TypeMessageReceived": {
                 "timestamp": 5.0,
                 "id": "1"
             }
         },
         {
-            "TypeSent": {
+            "TypeMessageSent": {
                 "timestamp": 6,
                 "msg": {
                     "id": "2",
@@ -47,13 +47,13 @@
             }
         },
         {
-            "TypeReceived": {
+            "TypeMessageReceived": {
                 "timestamp": 8.0,
                 "id": "2"
             }
         },
         {
-            "TypeSent": {
+            "TypeMessageSent": {
                 "timestamp": 9,
                 "msg": {
                     "id": "3",
@@ -64,7 +64,7 @@
             }
         },
         {
-            "TypeReceived": {
+            "TypeMessageReceived": {
                 "timestamp": 15.0,
                 "id": "3"
             }
