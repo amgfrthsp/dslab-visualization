@@ -133,7 +133,7 @@ impl EventController {
                 ControllerStateCommand::SendMessage(id) => {
                     let msg = self.messages.get(id).unwrap();
                     state.send_message(
-                        msg.id.clone(),
+                        &msg.id,
                         msg.time_sent,
                         &msg.from,
                         &msg.to,

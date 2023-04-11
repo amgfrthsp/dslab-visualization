@@ -7,10 +7,7 @@ use std::{
 use egui::ScrollArea;
 use macroquad::prelude::*;
 
-use crate::{
-    logs::log_entities::{EventLocalMessageReceived, EventLocalMessageSent},
-    visualization::utilities::*,
-};
+use crate::visualization::utilities::*;
 
 use super::local_message::*;
 use super::message::*;
@@ -100,17 +97,18 @@ impl State {
 
     pub fn send_message(
         &mut self,
-        id: String,
+        id: &str,
         timestamp: f64,
         from: &str,
         to: &str,
         data: String,
         duration: f32,
     ) {
+        let from_node = self.nodes.get(from).unwrap();
         let msg = StateMessage {
-            id: id.clone(),
-            pos: self.nodes.get(from).unwrap().borrow().pos,
-            from: Rc::clone(self.nodes.get(from).unwrap()),
+            id: id.to_string(),
+            pos: from_node.borrow().pos,
+            from: Rc::clone(from_node),
             to: Rc::clone(self.nodes.get(to).unwrap()),
             status: MessageStatus::Queued,
             time_sent: timestamp as f32,
@@ -118,10 +116,11 @@ impl State {
             data,
             drop: duration <= 0.0,
         };
-        self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
+        self.messages
+            .insert(id.to_string(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
-            event: StateEvent::SendMessage(id.clone()),
+            event: StateEvent::SendMessage(id.to_string()),
         });
     }
 
@@ -216,16 +215,15 @@ impl State {
             node.borrow_mut().update(self.current_time);
         }
         for (_, msg) in &mut self.travelling_messages {
-            msg.borrow_mut()
-                .update(self.global_speed, self.current_time as f32);
-            msg.borrow_mut().update_status();
-            let im_msg = msg.borrow();
-            if im_msg.is_delivered() && !im_msg.drop {
-                im_msg
+            let mut mut_msg = msg.borrow_mut();
+            mut_msg.update(self.global_speed, self.current_time as f32);
+            mut_msg.update_status();
+            if mut_msg.is_delivered() && !mut_msg.drop {
+                mut_msg
                     .to
                     .borrow_mut()
                     .messages_received
-                    .push(im_msg.id.clone());
+                    .push(mut_msg.id.clone());
             }
         }
         self.travelling_messages
@@ -454,16 +452,16 @@ impl State {
                 .timers
                 .push_back(timer),
             StateEvent::SendLocalMessage(id) => {
-                let msg = self.local_messages.get_mut(&id).unwrap();
+                let msg = self.local_messages.remove(&id).unwrap();
                 self.nodes
                     .get_mut(&msg.node_id)
                     .unwrap()
                     .borrow_mut()
                     .local_messages_sent
-                    .push(msg.clone());
+                    .push(msg);
             }
             StateEvent::ReceiveLocalMessage(id) => {
-                let msg = self.local_messages.get_mut(&id).unwrap();
+                let msg = self.local_messages.remove(&id).unwrap();
                 self.nodes
                     .get_mut(&msg.node_id)
                     .unwrap()
