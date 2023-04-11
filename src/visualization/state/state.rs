@@ -370,6 +370,30 @@ impl State {
                             "Status: {}",
                             if node.alive { "Alive" } else { "Crashed" }
                         ));
+                        ui.collapsing("Sent local messages", |ui| {
+                            ui.set_max_height(screen_height() * 0.3);
+                            ScrollArea::vertical().show(ui, |ui| {
+                                for msg in &node.local_messages_sent {
+                                    ui.label(format!("Message {}", msg.id));
+                                    ui.label(format!("Sent at: {}", msg.timestamp));
+                                    ui.label(format!("Data: {}", msg.data));
+                                    ui.separator();
+                                }
+                            });
+                            ui.set_max_height(f32::INFINITY);
+                        });
+                        ui.collapsing("Received local messages", |ui| {
+                            ui.set_max_height(screen_height() * 0.3);
+                            ScrollArea::vertical().show(ui, |ui| {
+                                for msg in &node.local_messages_received {
+                                    ui.label(format!("Message {}", msg.id));
+                                    ui.label(format!("Received at: {}", msg.timestamp));
+                                    ui.label(format!("Data: {}", msg.data));
+                                    ui.separator();
+                                }
+                            });
+                            ui.set_max_height(f32::INFINITY);
+                        });
                         ui.collapsing("Sent messages", |ui| {
                             ui.set_max_height(screen_height() * 0.3);
                             ScrollArea::vertical().show(ui, |ui| {
