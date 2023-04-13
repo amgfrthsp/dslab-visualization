@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use macroquad::rand::gen_range;
 use std::fs;
 use std::{collections::HashMap, f32::consts::PI};
 
@@ -36,23 +37,42 @@ impl EventController {
 
     pub fn parse_log(&mut self, filename: &str) {
         let contents = fs::read_to_string(filename).unwrap();
-        let log: EventLog = serde_json::from_str(&contents).unwrap();
+        let mut log: EventLog = serde_json::from_str(&contents).unwrap();
 
-        let center = Vec2::new(screen_width() / 2., screen_height() / 2.);
-        for i in 0..log.node_cnt {
-            let angle = (2.0 * PI / (log.node_cnt as f32)) * (i as f32);
-            let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
-            self.commands.push((
-                0.0,
-                ControllerStateCommand::AddNode(ControllerNode {
-                    id: i.to_string(),
-                    pos,
-                }),
-            ));
+        let mut node_cnt = 0;
+
+        for event in &log.events {
+            if let Event::TypeNodeAdded(_) = event {
+                node_cnt += 1;
+            }
         }
 
-        for event in log.events {
+        let center = Vec2::new(screen_width() / 2., screen_height() / 2.);
+        for i in 0..node_cnt {
+            let angle = (2.0 * PI / (node_cnt as f32)) * (i as f32);
+            let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
+            if let Event::TypeNodeAdded(node_added) = &log.events[i] {
+                self.commands.push((
+                    0.0,
+                    ControllerStateCommand::AddNode(ControllerNode {
+                        id: node_added.id.clone(),
+                        pos,
+                    }),
+                ));
+            }
+        }
+
+        for event in log.events.split_off(node_cnt) {
             match event {
+                Event::TypeNodeAdded(e) => {
+                    let x = gen_range(0.0, 1.0);
+                    let y = gen_range(0.0, 1.0);
+                    let pos = Vec2::from((x * screen_height(), y * screen_width()));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::AddNode(ControllerNode { id: e.id, pos }),
+                    ));
+                }
                 Event::TypeLocalMessageSent(e) => {
                     let msg = ControllerLocalMessage {
                         id: e.msg.id.clone(),

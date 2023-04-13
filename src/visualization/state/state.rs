@@ -16,7 +16,7 @@ use super::timer::*;
 
 #[derive(Clone, Debug)]
 pub enum StateEvent {
-    AddNode(StateNode),
+    AddNode(String),
     SendMessage(String),
     SendLocalMessage(String),
     ReceiveLocalMessage(String),
@@ -94,12 +94,18 @@ impl State {
             messages_received: Vec::new(),
             timers: VecDeque::new(),
             free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
+            show: false,
         };
-        self.nodes.insert(id.clone(), Rc::new(RefCell::new(node)));
-        self.ui_data.show_events_for_node.insert(id.clone(), true);
-        self.ui_data.ordered_node_ids.push(id.clone());
-        /*self.event_queue
-        .push_back((timestamp, StateEvent::AddNode(StateNode { id, pos })));*/
+        self.ui_data
+            .show_events_for_node
+            .insert(node.id.clone(), true);
+        self.ui_data.ordered_node_ids.push(node.id.clone());
+        self.event_queue.push_back(EventQueueItem {
+            timestamp,
+            event: StateEvent::AddNode(node.id.clone()),
+        });
+        self.nodes
+            .insert(node.id.clone(), Rc::new(RefCell::new(node)));
     }
 
     pub fn send_message(
@@ -490,9 +496,8 @@ impl State {
             return false;
         }
         match event {
-            StateEvent::AddNode(node) => {
-                self.nodes
-                    .insert(node.id.clone(), Rc::new(RefCell::new(node)));
+            StateEvent::AddNode(node_id) => {
+                self.nodes.get_mut(&node_id).unwrap().borrow_mut().show = true;
             }
             StateEvent::SendMessage(msg_id) => {
                 self.travelling_messages.insert(

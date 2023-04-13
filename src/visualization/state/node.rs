@@ -17,6 +17,7 @@ pub struct StateNode {
     pub messages_received: Vec<String>,
     pub timers: VecDeque<StateTimer>,
     pub free_timer_slots: VecDeque<usize>,
+    pub show: bool,
 }
 
 impl StateNode {

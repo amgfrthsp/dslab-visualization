@@ -1,6 +1,11 @@
 {
-  "node_cnt": 1,
   "events": [
+    {
+      "TypeNodeAdded": {
+        "timestamp": 0.0,
+        "id": "0"
+      }
+    },
     {
       "TypeTimerSet": {
         "timestamp": 3.0,

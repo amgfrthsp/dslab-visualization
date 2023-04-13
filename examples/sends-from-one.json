@@ -1,6 +1,23 @@
 {
-  "node_cnt": 3,
   "events": [
+    {
+      "TypeNodeAdded": {
+        "timestamp": 0.0,
+        "id": "0"
+      }
+    },
+    {
+      "TypeNodeAdded": {
+        "timestamp": 0.0,
+        "id": "1"
+      }
+    },
+    {
+      "TypeNodeAdded": {
+        "timestamp": 0.0,
+        "id": "2"
+      }
+    },
     {
       "TypeMessageSent": {
         "timestamp": 0.0,

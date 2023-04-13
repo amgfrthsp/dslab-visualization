@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct EventLog {
-    pub node_cnt: usize,
     pub events: Vec<Event>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
+    TypeNodeAdded(EventNodeAdded),
     TypeLocalMessageSent(EventLocalMessageSent),
     TypeLocalMessageReceived(EventLocalMessageReceived),
     TypeMessageSent(EventMessageSent),
@@ -16,6 +16,12 @@ pub enum Event {
     TypeNodeDown(EventNodeDown),
     TypeTimerSet(EventTimerSet),
     TypeTimerRemoved(EventTimerRemoved),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventNodeAdded {
+    pub timestamp: f64,
+    pub id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
