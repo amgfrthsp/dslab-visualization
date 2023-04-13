@@ -9,18 +9,19 @@ use super::node::*;
 pub struct StateMessage {
     pub id: String,
     pub pos: Vec2,
-    pub from: Rc<RefCell<StateNode>>,
-    pub to: Rc<RefCell<StateNode>>,
+    pub src: Rc<RefCell<StateNode>>,
+    pub dest: Rc<RefCell<StateNode>>,
+    pub tip: String,
+    pub data: String,
     pub status: MessageStatus,
     pub time_sent: f32,
     pub time_delivered: f32,
-    pub data: String,
     pub drop: bool,
 }
 
 impl StateMessage {
     pub fn update(&mut self, global_speed: f32, current_time: f32) {
-        let direction = self.to.borrow().pos - self.pos;
+        let direction = self.dest.borrow().pos - self.pos;
         let travel_time_left = self.time_delivered - current_time;
         let mut own_speed = if !self.drop {
             1.0 / (FPS * travel_time_left / direction.length())
@@ -34,27 +35,27 @@ impl StateMessage {
     }
 
     pub fn draw(&self) {
-        let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
-        let color =
-            if self.drop && calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.4 {
-                RED
-            } else {
-                BLUE
-            };
+        let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
+        let color = if self.drop && calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.4
+        {
+            RED
+        } else {
+            BLUE
+        };
         draw_circle(self.pos.x, self.pos.y, MESSAGE_RADIUS, color);
     }
 
     pub fn is_delivered(&self) -> bool {
         if !self.drop {
-            calc_dist(self.pos, self.to.borrow().pos) < 5.0
+            calc_dist(self.pos, self.dest.borrow().pos) < 5.0
         } else {
-            let overall_dist = calc_dist(self.from.borrow().pos, self.to.borrow().pos);
-            calc_dist(self.from.borrow().pos, self.pos) >= overall_dist * 0.7
+            let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
+            calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.7
         }
     }
 
     pub fn update_start_pos(&mut self) {
-        self.pos = self.from.borrow().pos;
+        self.pos = self.src.borrow().pos;
     }
 
     pub fn update_status(&mut self) {

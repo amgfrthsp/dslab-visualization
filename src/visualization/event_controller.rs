@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 use macroquad::rand::gen_range;
-use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::{collections::HashMap, f32::consts::PI};
 
 use crate::logs::log_entities::*;
@@ -36,12 +37,20 @@ impl EventController {
     }
 
     pub fn parse_log(&mut self, filename: &str) {
-        let contents = fs::read_to_string(filename).unwrap();
-        let mut log: EventLog = serde_json::from_str(&contents).unwrap();
+        let mut events: Vec<Event> = Vec::new();
+
+        let file = File::open(filename).unwrap();
+        let reader = BufReader::new(file);
+
+        for line in reader.lines() {
+            let event: Event = serde_json::from_str(&line.unwrap()).unwrap();
+            println!("{:?}", event);
+            events.push(event);
+        }
 
         let mut node_cnt = 0;
 
-        for event in &log.events {
+        for event in &events {
             if let Event::TypeNodeAdded(_) = event {
                 node_cnt += 1;
             } else {
@@ -53,7 +62,7 @@ impl EventController {
         for i in 0..node_cnt {
             let angle = (2.0 * PI / (node_cnt as f32)) * (i as f32);
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
-            if let Event::TypeNodeAdded(node_added) = &log.events[i] {
+            if let Event::TypeNodeAdded(node_added) = &events[i] {
                 self.commands.push((
                     0.0,
                     ControllerStateCommand::AddNode(ControllerNode {
@@ -64,7 +73,7 @@ impl EventController {
             }
         }
 
-        for event in log.events.split_off(node_cnt) {
+        for event in events.split_off(node_cnt) {
             match event {
                 Event::TypeNodeAdded(e) => {
                     let x = gen_range(0.3, 0.8);
@@ -106,8 +115,9 @@ impl EventController {
                 Event::TypeMessageSent(e) => {
                     let msg = ControllerMessage {
                         id: e.msg.id.clone(),
-                        from: e.msg.from,
-                        to: e.msg.to,
+                        src: e.msg.src,
+                        dest: e.msg.dest,
+                        tip: e.msg.tip,
                         data: e.msg.data,
                         time_sent: e.timestamp,
                         time_received: -1.0,
@@ -146,8 +156,10 @@ impl EventController {
         }
     }
 
-    pub fn send_commands(&self, state: &mut State) {
+    pub fn send_commands(&mut self, state: &mut State) {
+        self.commands.sort_by(|a, b| a.0.total_cmp(&b.0));
         for command in &self.commands {
+            println!("{}", command.0);
             match &command.1 {
                 ControllerStateCommand::AddNode(node) => {
                     state.add_node(0.0, node.id.clone(), node.pos);
@@ -157,8 +169,9 @@ impl EventController {
                     state.send_message(
                         msg.id.clone(),
                         msg.time_sent,
-                        &msg.from,
-                        &msg.to,
+                        &msg.src,
+                        &msg.dest,
+                        msg.tip.clone(),
                         msg.data.clone(),
                         (msg.time_received - msg.time_sent) as f32,
                     );
@@ -214,8 +227,9 @@ pub struct ControllerLocalMessage {
 
 pub struct ControllerMessage {
     id: String,
-    from: String,
-    to: String,
+    src: String,
+    dest: String,
+    tip: String,
     data: String,
     time_sent: f64,
     time_received: f64,

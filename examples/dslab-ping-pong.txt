@@ -1,0 +1,6 @@
+{"TypeNodeAdded":{"timestamp":0.0,"id":"server"}}
+{"TypeNodeAdded":{"timestamp":0.0,"id":"client"}}
+{"TypeMessageSent":{"timestamp":0.0,"msg":{"id":"0","src":"client","dest":"server","tip":"PING","data":"{\"value\": \"Hello!\"}"}}}
+{"TypeMessageReceived":{"timestamp":1.0,"id":"0"}}
+{"TypeMessageSent":{"timestamp":1.0,"msg":{"id":"1","src":"server","dest":"client","tip":"PONG","data":"{\"value\": \"Hello!\"}"}}}
+{"TypeMessageReceived":{"timestamp":2.0,"id":"1"}}

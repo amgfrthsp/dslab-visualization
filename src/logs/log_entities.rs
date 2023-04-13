@@ -82,8 +82,9 @@ pub struct LocalMessage {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
     pub id: String,
-    pub from: String,
-    pub to: String,
+    pub src: String,
+    pub dest: String,
+    pub tip: String,
     pub data: String,
 }
 
