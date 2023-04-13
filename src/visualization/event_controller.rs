@@ -44,6 +44,8 @@ impl EventController {
         for event in &log.events {
             if let Event::TypeNodeAdded(_) = event {
                 node_cnt += 1;
+            } else {
+                break;
             }
         }
 
@@ -65,8 +67,8 @@ impl EventController {
         for event in log.events.split_off(node_cnt) {
             match event {
                 Event::TypeNodeAdded(e) => {
-                    let x = gen_range(0.0, 1.0);
-                    let y = gen_range(0.0, 1.0);
+                    let x = gen_range(0.3, 0.8);
+                    let y = gen_range(0.3, 0.8);
                     let pos = Vec2::from((x * screen_height(), y * screen_width()));
                     self.commands.push((
                         e.timestamp,

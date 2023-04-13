@@ -8,6 +8,7 @@ use visualization::{event_controller::EventController, state::state::State};
 
 #[macroquad::main("Based on history")]
 async fn main() {
+    rand::srand(macroquad::miniquad::date::now() as _);
     let args: Vec<String> = env::args().collect();
 
     let mut state = State::new();
