@@ -104,7 +104,6 @@ impl State {
             timestamp,
             event: StateEvent::AddNode(node.id.clone()),
         });
-        let id_ = node.id.clone();
         self.nodes
             .insert(node.id.clone(), Rc::new(RefCell::new(node)));
     }
