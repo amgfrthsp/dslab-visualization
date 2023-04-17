@@ -521,6 +521,7 @@ impl State {
                 .show(egui_ctx, |ui| {
                     ui.label(format!("From: {}", msg.src.borrow().id.clone()));
                     ui.label(format!("To: {}", msg.dest.borrow().id.clone()));
+                    ui.label(format!("Type: {}", msg.tip));
                     ui.label(format!("Data: {}", msg.data.clone()));
                 });
         }
