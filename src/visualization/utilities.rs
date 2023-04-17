@@ -16,7 +16,7 @@ pub const CANCELLED_TIMER_COLOR: Color = RED;
 pub const GLOBAL_SPEED_DELTA: f32 = 0.0002;
 pub const MAX_MESSAGE_SPEED: f32 = 30.;
 
-pub const SINGLE_CLICK_DELAY: f64 = 0.3;
+pub const SINGLE_CLICK_DELAY: f64 = 0.003;
 
 pub const TIMERS_MAX_NUMBER: usize = 9;
 

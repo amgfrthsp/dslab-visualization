@@ -288,7 +288,6 @@ impl State {
             self.paused = !self.paused;
         }
         if is_key_pressed(KeyCode::Right) && !self.event_queue.is_empty() {
-            println!("Right");
             let new_current_time = self.event_queue.front().unwrap().timestamp - 0.01;
             let delta = self.current_time - new_current_time;
             for (_, msg) in &self.travelling_messages {
