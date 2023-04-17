@@ -287,6 +287,19 @@ impl State {
         if is_key_pressed(KeyCode::Space) {
             self.paused = !self.paused;
         }
+        if is_key_pressed(KeyCode::Right) && !self.event_queue.is_empty() {
+            println!("Right");
+            let new_current_time = self.event_queue.front().unwrap().timestamp - 0.01;
+            let delta = self.current_time - new_current_time;
+            for (_, msg) in &self.travelling_messages {
+                msg.borrow_mut().update_with_jump(
+                    self.global_speed,
+                    self.current_time as f32,
+                    delta as f32,
+                );
+            }
+            self.current_time = new_current_time;
+        }
         if is_key_down(KeyCode::Up) {
             self.global_speed += GLOBAL_SPEED_DELTA;
         }

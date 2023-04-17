@@ -20,8 +20,12 @@ pub struct StateMessage {
 }
 
 impl StateMessage {
-    pub fn update(&mut self, global_speed: f32, current_time: f32) {
-        let direction = self.dest.borrow().pos - self.pos;
+    pub fn get_direction(&self) -> Vec2 {
+        self.dest.borrow().pos - self.pos
+    }
+
+    pub fn get_own_speed(&self, current_time: f32) -> f32 {
+        let direction = self.get_direction();
         let travel_time_left = self.time_delivered - current_time;
         let mut own_speed = if !self.drop {
             1.0 / (FPS * travel_time_left / direction.length())
@@ -31,7 +35,20 @@ impl StateMessage {
         if own_speed < 0. {
             own_speed = MAX_MESSAGE_SPEED;
         }
+        own_speed
+    }
+
+    pub fn update(&mut self, global_speed: f32, current_time: f32) {
+        let direction = self.get_direction();
+        let own_speed = self.get_own_speed(current_time);
         self.pos += direction.normalize() * own_speed * global_speed;
+    }
+
+    pub fn update_with_jump(&mut self, global_speed: f32, current_time: f32, delta: f32) {
+        let direction = self.get_direction();
+        let own_speed = self.get_own_speed(current_time);
+        let jump_dist = own_speed * global_speed * delta;
+        self.pos += direction.normalize() * jump_dist;
     }
 
     pub fn draw(&self) {
