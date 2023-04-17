@@ -17,6 +17,7 @@ pub struct StateNode {
     pub messages_received: Vec<String>,
     pub timers: VecDeque<StateTimer>,
     pub free_timer_slots: VecDeque<usize>,
+    pub color: Color,
     pub show: bool,
 }
 
@@ -57,7 +58,7 @@ impl StateNode {
             self.pos.y,
             NODE_RADIUS,
             if self.connected {
-                ALIVE_NODE_COLOR
+                self.color
             } else {
                 DEAD_NODE_COLOR
             },

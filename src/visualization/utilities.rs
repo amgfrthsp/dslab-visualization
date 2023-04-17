@@ -6,7 +6,11 @@ pub const CIRCLE_RADIUS: f32 = 150.;
 pub const TIMER_RADIUS: f32 = 8.;
 pub const FPS: f32 = 60.0;
 
-pub const ALIVE_NODE_COLOR: Color = YELLOW;
+pub const ALIVE_NODE_COLORS: [Color; 15] = [
+    LIGHTGRAY, YELLOW, GOLD, ORANGE, PINK, RED, MAROON, GREEN, LIME, SKYBLUE, BLUE, PURPLE, VIOLET,
+    WHITE, MAGENTA,
+];
+
 pub const DEAD_NODE_COLOR: Color = RED;
 
 pub const TIMER_COLOR: Color = ORANGE;

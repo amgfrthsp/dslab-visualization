@@ -5,7 +5,7 @@ use std::{
 };
 
 use egui::{Checkbox, Context, ScrollArea, Slider};
-use macroquad::prelude::*;
+use macroquad::{prelude::*, rand::gen_range};
 
 use crate::visualization::utilities::*;
 
@@ -94,6 +94,7 @@ impl State {
             messages_received: Vec::new(),
             timers: VecDeque::new(),
             free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
+            color: ALIVE_NODE_COLORS[gen_range(0, ALIVE_NODE_COLORS.len())],
             show: false,
         };
         self.ui_data

@@ -57,7 +57,7 @@ impl StateMessage {
         {
             RED
         } else {
-            BLUE
+            self.src.borrow().color
         };
         draw_circle(self.pos.x, self.pos.y, MESSAGE_RADIUS, color);
     }
