@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use egui::{Checkbox, ScrollArea, Slider};
+use egui::{Checkbox, Context, ScrollArea, Slider};
 use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
@@ -359,129 +359,155 @@ impl State {
 
     pub fn draw_ui(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
-            egui::Window::new("Settings").show(egui_ctx, |ui| {
-                ui.add(Checkbox::new(&mut self.ui_data.show_timers, "Show timers"));
-                ui.add(
-                    Slider::new(&mut self.global_speed, 0.0000..=1.)
-                        .logarithmic(true)
-                        .step_by(GLOBAL_SPEED_DELTA as f64)
-                        .text("Speed"),
-                );
-                ui.collapsing("Show events (messages and timers) for a node:", |ui| {
-                    ui.set_max_height(screen_height() * 0.2);
-                    ScrollArea::vertical().show(ui, |ui| {
-                        for node_id in &self.ui_data.ordered_node_ids {
-                            let show_events =
-                                self.ui_data.show_events_for_node.get_mut(node_id).unwrap();
-                            ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
-                        }
-                    });
-                    ui.set_max_height(f32::INFINITY);
-                });
-            });
-
-            if let Some(timer) = &self.ui_data.hovered_timer {
-                egui::Window::new("Timer")
-                    .default_pos(mouse_position())
-                    .show(egui_ctx, |ui| {
-                        ui.label(format!("Id: {}", timer.id));
-                        ui.label(format!("Timer delay: {}", timer.delay));
-                        ui.label(format!("Time set: {}", timer.time_set));
-                        ui.label(format!("Time removed: {}", timer.time_removed));
-                    });
-            }
-            for (node_id, show_window) in &mut self.ui_data.show_node_windows {
-                let node = self.nodes.get(node_id).unwrap().borrow();
-                egui::Window::new(format!("Node {}", node_id))
-                    .open(show_window)
-                    .show(egui_ctx, |ui| {
-                        ui.label(format!(
-                            "Status: {}",
-                            if node.connected { "Alive" } else { "Crashed" }
-                        ));
-                        ui.collapsing("Sent local messages", |ui| {
-                            ui.set_max_height(screen_height() * 0.3);
-                            ScrollArea::vertical().show(ui, |ui| {
-                                for msg in &node.local_messages_sent {
-                                    ui.label(format!("Message {}", msg.id));
-                                    ui.label(format!("Sent at: {}", msg.timestamp));
-                                    ui.label(format!("Data: {}", msg.data));
-                                    ui.separator();
-                                }
-                            });
-                            ui.set_max_height(f32::INFINITY);
-                        });
-                        ui.collapsing("Received local messages", |ui| {
-                            ui.set_max_height(screen_height() * 0.3);
-                            ScrollArea::vertical().show(ui, |ui| {
-                                for msg in &node.local_messages_received {
-                                    ui.label(format!("Message {}", msg.id));
-                                    ui.label(format!("Received at: {}", msg.timestamp));
-                                    ui.label(format!("Data: {}", msg.data));
-                                    ui.separator();
-                                }
-                            });
-                            ui.set_max_height(f32::INFINITY);
-                        });
-                        ui.collapsing("Sent messages", |ui| {
-                            ui.set_max_height(screen_height() * 0.3);
-                            ScrollArea::vertical().show(ui, |ui| {
-                                for msg_id in &node.messages_sent {
-                                    let msg = self.messages.get(msg_id).unwrap().borrow();
-                                    ui.label(format!("Message {}", msg.id));
-                                    ui.label(format!("To: {}", msg.dest.borrow().id));
-                                    ui.label(format!("Sent at: {}", msg.time_sent));
-                                    ui.label(format!("Status: {:?}", msg.status));
-                                    ui.label(format!("Type: {}", msg.tip));
-                                    ui.label(format!("Data: {}", msg.data));
-                                    ui.separator();
-                                }
-                            });
-                            ui.set_max_height(f32::INFINITY);
-                        });
-                        ui.collapsing("Received messages", |ui| {
-                            ui.set_max_height(screen_height() * 0.3);
-                            ScrollArea::vertical().show(ui, |ui| {
-                                for msg_id in &node.messages_received {
-                                    let msg = self.messages.get(msg_id).unwrap().borrow();
-                                    ui.label(format!("Message {}", msg.id));
-                                    ui.label(format!("From: {}", msg.src.borrow().id));
-                                    ui.label(format!("Received at: {}", msg.time_delivered));
-                                    ui.label(format!("Type: {}", msg.tip));
-                                    ui.label(format!("Data: {}", msg.data));
-                                    ui.separator();
-                                }
-                            });
-                            ui.set_max_height(f32::INFINITY);
-                        });
-                        ui.collapsing("Current timers", |ui| {
-                            ui.set_max_height(screen_height() * 0.3);
-                            ScrollArea::vertical().show(ui, |ui| {
-                                for timer in &node.timers {
-                                    ui.label(format!("Timer {}", timer.id));
-                                    ui.label(format!("Time set: {}", timer.time_set));
-                                    ui.label(format!("Delay: {}", timer.delay));
-                                    ui.separator();
-                                }
-                            });
-                            ui.set_max_height(f32::INFINITY);
-                        });
-                    });
-            }
-            for (msg_id, show_window) in &mut self.ui_data.show_msg_windows {
-                if !self.travelling_messages.contains_key(msg_id) {
-                    continue;
-                }
-                let msg = self.travelling_messages.get(msg_id).unwrap().borrow();
-                egui::Window::new(format!("Message {}", msg_id))
-                    .open(show_window)
-                    .show(egui_ctx, |ui| {
-                        ui.label(format!("From: {}", msg.src.borrow().id.clone()));
-                        ui.label(format!("To: {}", msg.dest.borrow().id.clone()));
-                        ui.label(format!("Data: {}", msg.data.clone()));
-                    });
-            }
+            self.draw_ui_config_window(egui_ctx);
+            self.draw_ui_hovered_timer(egui_ctx);
+            self.draw_ui_node_windows(egui_ctx);
+            self.draw_ui_msg_windows(egui_ctx);
         });
+    }
+
+    pub fn draw_ui_config_window(&mut self, egui_ctx: &Context) {
+        egui::Window::new("Config").show(egui_ctx, |ui| {
+            let next_event_at;
+            if self.event_queue.is_empty() {
+                next_event_at = "--".to_owned();
+            } else {
+                next_event_at = format!("{:.4}", self.event_queue.front().unwrap().timestamp);
+            }
+            ui.label(format!("Next event at: {}", next_event_at));
+            ui.add(Checkbox::new(&mut self.ui_data.show_timers, "Show timers"));
+            ui.add(
+                Slider::new(&mut self.global_speed, 0.0000..=1.)
+                    .logarithmic(true)
+                    .step_by(GLOBAL_SPEED_DELTA as f64)
+                    .text("Speed"),
+            );
+            ui.collapsing("Show events (messages and timers) for a node:", |ui| {
+                ui.set_max_height(screen_height() * 0.2);
+                ScrollArea::vertical().show(ui, |ui| {
+                    for node_id in &self.ui_data.ordered_node_ids {
+                        let show_events =
+                            self.ui_data.show_events_for_node.get_mut(node_id).unwrap();
+                        ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
+                    }
+                });
+                ui.set_max_height(f32::INFINITY);
+            });
+        });
+    }
+
+    pub fn draw_ui_hovered_timer(&mut self, egui_ctx: &Context) {
+        if let Some(timer) = &self.ui_data.hovered_timer {
+            egui::Window::new("Timer")
+                .default_pos(mouse_position())
+                .show(egui_ctx, |ui| {
+                    ui.label(format!("Id: {}", timer.id));
+                    ui.label(format!("Timer delay: {}", timer.delay));
+                    ui.label(format!("Time set: {}", timer.time_set));
+                    ui.label(format!("Time removed: {}", timer.time_removed));
+                });
+        }
+    }
+
+    pub fn draw_ui_node_windows(&mut self, egui_ctx: &Context) {
+        for (node_id, show_window) in &mut self.ui_data.show_node_windows {
+            let node = self.nodes.get(node_id).unwrap().borrow();
+            egui::Window::new(format!("Node {}", node_id))
+                .open(show_window)
+                .show(egui_ctx, |ui| {
+                    ui.label(format!(
+                        "Status: {}",
+                        if node.connected {
+                            "Connected"
+                        } else {
+                            "Disconnected"
+                        }
+                    ));
+                    ui.collapsing("Sent local messages", |ui| {
+                        ui.set_max_height(screen_height() * 0.3);
+                        ScrollArea::vertical().show(ui, |ui| {
+                            for msg in &node.local_messages_sent {
+                                ui.label(format!("Message {}", msg.id));
+                                ui.label(format!("Sent at: {}", msg.timestamp));
+                                ui.label(format!("Data: {}", msg.data));
+                                ui.separator();
+                            }
+                        });
+                        ui.set_max_height(f32::INFINITY);
+                    });
+                    ui.collapsing("Received local messages", |ui| {
+                        ui.set_max_height(screen_height() * 0.3);
+                        ScrollArea::vertical().show(ui, |ui| {
+                            for msg in &node.local_messages_received {
+                                ui.label(format!("Message {}", msg.id));
+                                ui.label(format!("Received at: {}", msg.timestamp));
+                                ui.label(format!("Data: {}", msg.data));
+                                ui.separator();
+                            }
+                        });
+                        ui.set_max_height(f32::INFINITY);
+                    });
+                    ui.collapsing("Sent messages", |ui| {
+                        ui.set_max_height(screen_height() * 0.3);
+                        ScrollArea::vertical().show(ui, |ui| {
+                            for msg_id in &node.messages_sent {
+                                let msg = self.messages.get(msg_id).unwrap().borrow();
+                                ui.label(format!("Message {}", msg.id));
+                                ui.label(format!("To: {}", msg.dest.borrow().id));
+                                ui.label(format!("Sent at: {}", msg.time_sent));
+                                ui.label(format!("Status: {:?}", msg.status));
+                                ui.label(format!("Type: {}", msg.tip));
+                                ui.label(format!("Data: {}", msg.data));
+                                ui.separator();
+                            }
+                        });
+                        ui.set_max_height(f32::INFINITY);
+                    });
+                    ui.collapsing("Received messages", |ui| {
+                        ui.set_max_height(screen_height() * 0.3);
+                        ScrollArea::vertical().show(ui, |ui| {
+                            for msg_id in &node.messages_received {
+                                let msg = self.messages.get(msg_id).unwrap().borrow();
+                                ui.label(format!("Message {}", msg.id));
+                                ui.label(format!("From: {}", msg.src.borrow().id));
+                                ui.label(format!("Received at: {}", msg.time_delivered));
+                                ui.label(format!("Type: {}", msg.tip));
+                                ui.label(format!("Data: {}", msg.data));
+                                ui.separator();
+                            }
+                        });
+                        ui.set_max_height(f32::INFINITY);
+                    });
+                    ui.collapsing("Current timers", |ui| {
+                        ui.set_max_height(screen_height() * 0.3);
+                        ScrollArea::vertical().show(ui, |ui| {
+                            for timer in &node.timers {
+                                ui.label(format!("Timer {}", timer.id));
+                                ui.label(format!("Time set: {}", timer.time_set));
+                                ui.label(format!("Delay: {}", timer.delay));
+                                ui.separator();
+                            }
+                        });
+                        ui.set_max_height(f32::INFINITY);
+                    });
+                });
+        }
+    }
+
+    pub fn draw_ui_msg_windows(&mut self, egui_ctx: &Context) {
+        for (msg_id, show_window) in &mut self.ui_data.show_msg_windows {
+            if !self.travelling_messages.contains_key(msg_id) {
+                continue;
+            }
+            let msg = self.travelling_messages.get(msg_id).unwrap().borrow();
+            egui::Window::new(format!("Message {}", msg_id))
+                .open(show_window)
+                .show(egui_ctx, |ui| {
+                    ui.label(format!("From: {}", msg.src.borrow().id.clone()));
+                    ui.label(format!("To: {}", msg.dest.borrow().id.clone()));
+                    ui.label(format!("Data: {}", msg.data.clone()));
+                });
+        }
     }
 
     pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
