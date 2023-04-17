@@ -20,8 +20,8 @@ pub enum StateEvent {
     SendMessage(String),
     SendLocalMessage(String),
     ReceiveLocalMessage(String),
-    NodeUp(String),
-    NodeDown(String),
+    NodeConnected(String),
+    NodeDisconnected(String),
     TimerSet(StateTimer),
 }
 
@@ -87,7 +87,7 @@ impl State {
         let node = StateNode {
             id: id.clone(),
             pos: pos,
-            alive: true,
+            connected: true,
             local_messages_sent: Vec::new(),
             local_messages_received: Vec::new(),
             messages_sent: Vec::new(),
@@ -171,17 +171,17 @@ impl State {
         });
     }
 
-    pub fn process_node_down(&mut self, timestamp: f64, id: String) {
+    pub fn process_node_disconnected(&mut self, timestamp: f64, id: String) {
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
-            event: StateEvent::NodeDown(id),
+            event: StateEvent::NodeDisconnected(id),
         });
     }
 
-    pub fn process_node_up(&mut self, timestamp: f64, id: String) {
+    pub fn process_node_connected(&mut self, timestamp: f64, id: String) {
         self.event_queue.push_back(EventQueueItem {
             timestamp: timestamp,
-            event: StateEvent::NodeUp(id),
+            event: StateEvent::NodeConnected(id),
         });
     }
 
@@ -397,7 +397,7 @@ impl State {
                     .show(egui_ctx, |ui| {
                         ui.label(format!(
                             "Status: {}",
-                            if node.alive { "Alive" } else { "Crashed" }
+                            if node.connected { "Alive" } else { "Crashed" }
                         ));
                         ui.collapsing("Sent local messages", |ui| {
                             ui.set_max_height(screen_height() * 0.3);
@@ -502,8 +502,12 @@ impl State {
                 msg.set_status(MessageStatus::OnTheWay);
                 msg.src.borrow_mut().messages_sent.push(msg.id.clone());
             }
-            StateEvent::NodeDown(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_dead(),
-            StateEvent::NodeUp(id) => self.nodes.get_mut(&id).unwrap().borrow_mut().make_alive(),
+            StateEvent::NodeDisconnected(id) => {
+                self.nodes.get_mut(&id).unwrap().borrow_mut().connected = false
+            }
+            StateEvent::NodeConnected(id) => {
+                self.nodes.get_mut(&id).unwrap().borrow_mut().connected = true
+            }
             StateEvent::TimerSet(timer) => self
                 .nodes
                 .get_mut(&timer.node_id)

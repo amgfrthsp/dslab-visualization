@@ -10,7 +10,7 @@ use super::{local_message::StateLocalMessage, timer::*};
 pub struct StateNode {
     pub id: String,
     pub pos: Vec2,
-    pub alive: bool,
+    pub connected: bool,
     pub local_messages_sent: Vec<StateLocalMessage>,
     pub local_messages_received: Vec<StateLocalMessage>,
     pub messages_sent: Vec<String>,
@@ -56,7 +56,7 @@ impl StateNode {
             self.pos.x,
             self.pos.y,
             NODE_RADIUS,
-            if self.alive {
+            if self.connected {
                 ALIVE_NODE_COLOR
             } else {
                 DEAD_NODE_COLOR
@@ -89,13 +89,5 @@ impl StateNode {
                 self.timers[i].draw(self.pos, current_time);
             }
         }
-    }
-
-    pub fn make_alive(&mut self) {
-        self.alive = true;
-    }
-
-    pub fn make_dead(&mut self) {
-        self.alive = false;
     }
 }

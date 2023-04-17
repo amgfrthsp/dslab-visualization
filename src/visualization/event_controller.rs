@@ -13,8 +13,8 @@ use super::utilities::CIRCLE_RADIUS;
 pub enum ControllerStateCommand {
     SendMessage(String),
     ProcessLocalMessage(String),
-    NodeUp(String),
-    NodeDown(String),
+    NodeConnected(String),
+    NodeDisconnected(String),
     AddNode(ControllerNode),
     TimerSet(String),
 }
@@ -129,13 +129,13 @@ impl EventController {
                 Event::TypeMessageReceived(e) => {
                     self.messages.get_mut(&e.id).unwrap().time_received = e.timestamp;
                 }
-                Event::TypeNodeDown(e) => {
+                Event::TypeNodeDisconnected(e) => {
                     self.commands
-                        .push((e.timestamp, ControllerStateCommand::NodeDown(e.id)));
+                        .push((e.timestamp, ControllerStateCommand::NodeDisconnected(e.id)));
                 }
-                Event::TypeNodeUp(e) => {
+                Event::TypeNodeConnected(e) => {
                     self.commands
-                        .push((e.timestamp, ControllerStateCommand::NodeUp(e.id)));
+                        .push((e.timestamp, ControllerStateCommand::NodeConnected(e.id)));
                 }
                 Event::TypeTimerSet(e) => {
                     let timer = ControllerTimer {
@@ -191,11 +191,11 @@ impl EventController {
                         is_sent,
                     );
                 }
-                ControllerStateCommand::NodeDown(id) => {
-                    state.process_node_down(command.0, id.to_string())
+                ControllerStateCommand::NodeDisconnected(id) => {
+                    state.process_node_disconnected(command.0, id.to_string())
                 }
-                ControllerStateCommand::NodeUp(id) => {
-                    state.process_node_up(command.0, id.to_string())
+                ControllerStateCommand::NodeConnected(id) => {
+                    state.process_node_connected(command.0, id.to_string())
                 }
                 ControllerStateCommand::TimerSet(id) => {
                     let timer = self.timers.get(id).unwrap();

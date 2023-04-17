@@ -12,8 +12,8 @@ pub enum Event {
     TypeLocalMessageReceived(EventLocalMessageReceived),
     TypeMessageSent(EventMessageSent),
     TypeMessageReceived(EventMessageReceived),
-    TypeNodeUp(EventNodeUp),
-    TypeNodeDown(EventNodeDown),
+    TypeNodeConnected(EventNodeConnected),
+    TypeNodeDisconnected(EventNodeDisconnected),
     TypeTimerSet(EventTimerSet),
     TypeTimerRemoved(EventTimerRemoved),
 }
@@ -49,13 +49,13 @@ pub struct EventMessageReceived {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct EventNodeUp {
+pub struct EventNodeConnected {
     pub timestamp: f64,
     pub id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct EventNodeDown {
+pub struct EventNodeDisconnected {
     pub timestamp: f64,
     pub id: String,
 }
