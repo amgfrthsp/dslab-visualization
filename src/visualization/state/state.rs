@@ -118,6 +118,10 @@ impl State {
         data: String,
         duration: f32,
     ) {
+        if self.messages.is_empty() {
+            self.global_speed = duration / 10.;
+        }
+
         let src_node = self.nodes.get(src).unwrap();
         let msg = StateMessage {
             id: id.clone(),
