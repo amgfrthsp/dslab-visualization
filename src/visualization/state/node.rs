@@ -63,14 +63,19 @@ impl StateNode {
             },
         );
 
-        let offset = NODE_RADIUS / 2.25;
+        let font_size = (NODE_RADIUS * 2.0).floor() as u16;
+        let text_size = measure_text(&self.id, None, font_size, 1.0);
+        let text_position = Vec2::new(
+            self.pos.x - text_size.width / 2.0,
+            self.pos.y + text_size.height / 2.0,
+        );
 
         draw_text_ex(
             &self.id,
-            self.pos.x - offset,
-            self.pos.y + offset,
+            text_position.x,
+            text_position.y,
             TextParams {
-                font_size: (NODE_RADIUS * 2.0).floor() as u16,
+                font_size,
                 color: BLACK,
                 ..Default::default()
             },

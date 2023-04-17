@@ -68,7 +68,7 @@ impl State {
             current_time: 0.0,
             last_updated: 0.0,
             paused: false,
-            global_speed: 1.0,
+            global_speed: 0.01,
             ui_data: UIData {
                 ordered_node_ids: Vec::new(),
                 show_events_for_node: HashMap::new(),
@@ -268,31 +268,15 @@ impl State {
             }
         }
         self.draw_time();
-        self.draw_speed();
     }
 
     pub fn draw_time(&self) {
-        let time_str = (self.current_time.floor() as u32).to_string();
         draw_text_ex(
-            &time_str,
-            screen_width() * 0.87,
+            &format!("Time: {:.5}", self.current_time),
+            screen_width() * 0.03,
             screen_height() * 0.96,
             TextParams {
-                font_size: (screen_width() / 12.0).floor() as u16,
-                color: WHITE,
-                ..Default::default()
-            },
-        );
-    }
-
-    pub fn draw_speed(&self) {
-        let speed = format!("speed:{:.2}", self.global_speed);
-        draw_text_ex(
-            &speed,
-            screen_width() * 0.02,
-            screen_height() * 0.97,
-            TextParams {
-                font_size: (screen_width() / 24.0).floor() as u16,
+                font_size: (screen_width() / 18.0).floor() as u16,
                 color: WHITE,
                 ..Default::default()
             },
@@ -307,9 +291,7 @@ impl State {
             self.global_speed += GLOBAL_SPEED_DELTA;
         }
         if is_key_down(KeyCode::Down) {
-            if self.global_speed - GLOBAL_SPEED_DELTA > 0.0 {
-                self.global_speed -= GLOBAL_SPEED_DELTA;
-            }
+            self.global_speed = f32::max(0.0, self.global_speed - GLOBAL_SPEED_DELTA);
         }
         if is_mouse_button_down(MouseButton::Left) {
             let mouse_pos = mouse_position();
@@ -379,14 +361,21 @@ impl State {
         egui_macroquad::ui(|egui_ctx| {
             egui::Window::new("Settings").show(egui_ctx, |ui| {
                 ui.add(Checkbox::new(&mut self.ui_data.show_timers, "Show timers"));
-                ui.add(Slider::new(&mut self.global_speed, 0.0000..=20.).text("Speed"));
+                ui.add(
+                    Slider::new(&mut self.global_speed, 0.0000..=1.)
+                        .logarithmic(true)
+                        .step_by(GLOBAL_SPEED_DELTA as f64)
+                        .text("Speed"),
+                );
                 ui.collapsing("Show events (messages and timers) for a node:", |ui| {
                     ui.set_max_height(screen_height() * 0.2);
-                    for node_id in &self.ui_data.ordered_node_ids {
-                        let show_events =
-                            self.ui_data.show_events_for_node.get_mut(node_id).unwrap();
-                        ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
-                    }
+                    ScrollArea::vertical().show(ui, |ui| {
+                        for node_id in &self.ui_data.ordered_node_ids {
+                            let show_events =
+                                self.ui_data.show_events_for_node.get_mut(node_id).unwrap();
+                            ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
+                        }
+                    });
                     ui.set_max_height(f32::INFINITY);
                 });
             });

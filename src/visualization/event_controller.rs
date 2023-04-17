@@ -44,7 +44,7 @@ impl EventController {
 
         for line in reader.lines() {
             let event: Event = serde_json::from_str(&line.unwrap()).unwrap();
-            println!("{:?}", event);
+            //println!("{:?}", event);
             events.push(event);
         }
 
@@ -159,7 +159,7 @@ impl EventController {
     pub fn send_commands(&mut self, state: &mut State) {
         self.commands.sort_by(|a, b| a.0.total_cmp(&b.0));
         for command in &self.commands {
-            println!("{}", command.0);
+            //println!("{}", command.0);
             match &command.1 {
                 ControllerStateCommand::AddNode(node) => {
                     state.add_node(0.0, node.id.clone(), node.pos);

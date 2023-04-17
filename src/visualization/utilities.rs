@@ -13,7 +13,7 @@ pub const TIMER_COLOR: Color = ORANGE;
 pub const READY_TIMER_COLOR: Color = GREEN;
 pub const CANCELLED_TIMER_COLOR: Color = RED;
 
-pub const GLOBAL_SPEED_DELTA: f32 = 0.02;
+pub const GLOBAL_SPEED_DELTA: f32 = 0.0002;
 pub const MAX_MESSAGE_SPEED: f32 = 30.;
 
 pub const SINGLE_CLICK_DELAY: f64 = 0.3;
