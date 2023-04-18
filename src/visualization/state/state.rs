@@ -69,7 +69,7 @@ impl State {
             current_time: 0.0,
             last_updated: 0.0,
             paused: false,
-            global_speed: 0.01,
+            global_speed: DEFAULT_GLOBAL_SPEED,
             ui_data: UIData {
                 ordered_node_ids: Vec::new(),
                 show_events_for_node: HashMap::new(),
@@ -125,7 +125,7 @@ impl State {
         data: String,
         duration: f32,
     ) {
-        if self.messages.is_empty() {
+        if self.global_speed == DEFAULT_GLOBAL_SPEED && duration > 0. {
             self.global_speed = duration / 10.;
         }
 
@@ -141,6 +141,8 @@ impl State {
             time_sent: timestamp as f32,
             time_delivered: timestamp as f32 + duration,
             drop: duration <= 0.0,
+            last_color_change: 0.,
+            drop_color: WHITE,
         };
         self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
@@ -254,7 +256,7 @@ impl State {
         self.travelling_messages.retain(|_, msg| {
             let msg_borrow = msg.borrow();
             if !msg_borrow.is_delivered()
-                && (!msg_borrow.drop && self.current_time < msg_borrow.time_delivered.into())
+                && (msg_borrow.drop || self.current_time < msg_borrow.time_delivered.into())
             {
                 return true;
             }
@@ -268,10 +270,10 @@ impl State {
             node.borrow()
                 .draw(show_events, self.current_time, self.ui_data.show_timers);
         }
-        for (_, msg) in &self.travelling_messages {
-            let msg_borrowed = msg.borrow();
-            let src_id = &msg_borrowed.src.borrow().id;
-            let dest_id = &msg_borrowed.dest.borrow().id;
+        for (_, msg) in &mut self.travelling_messages {
+            let mut msg_borrowed = msg.borrow_mut();
+            let src_id = &msg_borrowed.src.borrow().id.clone();
+            let dest_id = &msg_borrowed.dest.borrow().id.clone();
             let show_message = *self.ui_data.show_events_for_node.get(src_id).unwrap()
                 || *self.ui_data.show_events_for_node.get(dest_id).unwrap();
             if show_message {

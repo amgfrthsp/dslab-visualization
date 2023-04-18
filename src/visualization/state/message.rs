@@ -17,6 +17,8 @@ pub struct StateMessage {
     pub time_sent: f32,
     pub time_delivered: f32,
     pub drop: bool,
+    pub last_color_change: f64,
+    pub drop_color: Color,
 }
 
 impl StateMessage {
@@ -51,11 +53,18 @@ impl StateMessage {
         self.pos += direction.normalize() * jump_dist;
     }
 
-    pub fn draw(&self) {
-        let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
-        let color = if self.drop && calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.4
-        {
-            RED
+    pub fn draw(&mut self) {
+        let time = get_time();
+        if self.drop && time - self.last_color_change >= 0.3 {
+            self.drop_color = if self.drop_color == BLACK {
+                self.src.borrow().color
+            } else {
+                BLACK
+            };
+            self.last_color_change = time;
+        }
+        let color = if self.drop {
+            self.drop_color
         } else {
             self.src.borrow().color
         };
@@ -67,7 +76,7 @@ impl StateMessage {
             calc_dist(self.pos, self.dest.borrow().pos) < 5.0
         } else {
             let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
-            calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.7
+            calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.5
         }
     }
 
