@@ -5,7 +5,7 @@ use std::{
 };
 
 use egui::{Checkbox, Context, ScrollArea, Slider};
-use macroquad::{prelude::*, rand::gen_range};
+use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
 
@@ -55,6 +55,7 @@ pub struct State {
     paused: bool,
     global_speed: f32,
     ui_data: UIData,
+    node_colors: VecDeque<Color>,
 }
 
 impl State {
@@ -80,10 +81,15 @@ impl State {
                 hovered_timer: None,
                 show_timers: true,
             },
+            node_colors: VecDeque::from([
+                ORANGE, YELLOW, GREEN, SKYBLUE, BLUE, PURPLE, GOLD, LIGHTGRAY, PINK, LIME, VIOLET,
+                WHITE, MAGENTA,
+            ]),
         }
     }
 
     pub fn add_node(&mut self, timestamp: f64, id: String, pos: Vec2) {
+        let color = self.node_colors.pop_front().unwrap_or(DEFAULT_NODE_COLOR);
         let node = StateNode {
             id: id.clone(),
             pos: pos,
@@ -94,7 +100,7 @@ impl State {
             messages_received: Vec::new(),
             timers: VecDeque::new(),
             free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
-            color: ALIVE_NODE_COLORS[gen_range(0, ALIVE_NODE_COLORS.len())],
+            color,
             show: false,
         };
         self.ui_data
