@@ -16,6 +16,15 @@ pub enum Event {
     TypeNodeDisconnected(EventNodeDisconnected),
     TypeTimerSet(EventTimerSet),
     TypeTimerRemoved(EventTimerRemoved),
+
+    TypeLinkDisabled(EventLinkDisabled),
+    TypeLinkEnabled(EventLinkEnabled),
+    TypeDropIncoming(EventDropIncoming),
+    TypePassIncoming(EventPassIncoming),
+    TypeDropOutgoing(EventDropOutgoing),
+    TypePassOutgoing(EventPassOutgoing),
+    TypeMakePartition(EventMakePartition),
+    TypeResetNetwork(EventResetNetwork),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -70,6 +79,56 @@ pub struct EventTimerSet {
 pub struct EventTimerRemoved {
     pub timestamp: f64,
     pub id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventLinkDisabled {
+    pub timestamp: f64,
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventLinkEnabled {
+    pub timestamp: f64,
+    pub from: String,
+    pub to: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventDropIncoming {
+    pub timestamp: f64,
+    pub node_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventPassIncoming {
+    pub timestamp: f64,
+    pub node_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventDropOutgoing {
+    pub timestamp: f64,
+    pub node_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventPassOutgoing {
+    pub timestamp: f64,
+    pub node_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventMakePartition {
+    pub timestamp: f64,
+    pub group1: Vec<String>,
+    pub group2: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EventResetNetwork {
+    pub timestamp: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

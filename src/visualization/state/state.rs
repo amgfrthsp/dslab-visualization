@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     rc::Rc,
 };
 
@@ -23,6 +23,14 @@ pub enum StateEvent {
     NodeConnected(String),
     NodeDisconnected(String),
     TimerSet(StateTimer),
+    LinkDisabled((String, String)),
+    LinkEnabled((String, String)),
+    DropIncoming(String),
+    PassIncoming(String),
+    DropOutgoing(String),
+    PassOutgoing(String),
+    MakePartition((Vec<String>, Vec<String>)),
+    ResetNetwork(),
 }
 
 #[derive(Clone)]
@@ -56,6 +64,9 @@ pub struct State {
     global_speed: f32,
     ui_data: UIData,
     node_colors: VecDeque<Color>,
+    drop_outgoing: HashSet<String>,
+    drop_incoming: HashSet<String>,
+    disabled_links: HashSet<(String, String)>,
 }
 
 impl State {
@@ -81,6 +92,9 @@ impl State {
                 hovered_timer: None,
                 show_timers: true,
             },
+            drop_outgoing: HashSet::new(),
+            drop_incoming: HashSet::new(),
+            disabled_links: HashSet::new(),
             node_colors: VecDeque::from([
                 ORANGE, YELLOW, GREEN, SKYBLUE, BLUE, PURPLE, GOLD, LIGHTGRAY, PINK, LIME, VIOLET,
                 WHITE, MAGENTA,
@@ -217,6 +231,67 @@ impl State {
         self.event_queue.push_back(EventQueueItem {
             timestamp: time_set,
             event: StateEvent::TimerSet(timer),
+        });
+    }
+
+    pub fn process_link_disabled(&mut self, timestamp: f64, from: String, to: String) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::LinkDisabled((from, to)),
+        });
+    }
+
+    pub fn process_link_enabled(&mut self, timestamp: f64, from: String, to: String) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::LinkEnabled((from, to)),
+        });
+    }
+
+    pub fn process_drop_incoming(&mut self, timestamp: f64, node_id: String) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::DropIncoming(node_id),
+        });
+    }
+
+    pub fn process_pass_incoming(&mut self, timestamp: f64, node_id: String) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::PassIncoming(node_id),
+        });
+    }
+
+    pub fn process_drop_outgoing(&mut self, timestamp: f64, node_id: String) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::DropOutgoing(node_id),
+        });
+    }
+
+    pub fn process_pass_outgoing(&mut self, timestamp: f64, node_id: String) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::PassOutgoing(node_id),
+        });
+    }
+
+    pub fn process_make_partition(
+        &mut self,
+        timestamp: f64,
+        group1: Vec<String>,
+        group2: Vec<String>,
+    ) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::MakePartition((group1, group2)),
+        });
+    }
+
+    pub fn process_reset_network(&mut self, timestamp: f64) {
+        self.event_queue.push_back(EventQueueItem {
+            timestamp: timestamp,
+            event: StateEvent::ResetNetwork(),
         });
     }
 
@@ -584,6 +659,30 @@ impl State {
                     .borrow_mut()
                     .local_messages_received
                     .push(msg.clone());
+            }
+            StateEvent::LinkDisabled((from, to)) => {
+                self.disabled_links.insert((from, to));
+            }
+            StateEvent::LinkEnabled((from, to)) => {
+                self.disabled_links.remove(&(from, to));
+            }
+            StateEvent::DropIncoming(node_id) => {
+                self.drop_incoming.insert(node_id);
+            }
+            StateEvent::PassIncoming(node_id) => {
+                self.drop_incoming.remove(&node_id);
+            }
+            StateEvent::DropOutgoing(node_id) => {
+                self.drop_outgoing.insert(node_id);
+            }
+            StateEvent::PassOutgoing(node_id) => {
+                self.drop_outgoing.remove(&node_id);
+            }
+            StateEvent::MakePartition((group1, group2)) => {}
+            StateEvent::ResetNetwork() => {
+                self.drop_incoming.clear();
+                self.drop_outgoing.clear();
+                self.disabled_links.clear();
             }
         }
         true

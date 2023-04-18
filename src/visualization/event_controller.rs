@@ -17,6 +17,14 @@ pub enum ControllerStateCommand {
     NodeDisconnected(String),
     AddNode(ControllerNode),
     TimerSet(String),
+    DisableLink((String, String)),
+    EnableLink((String, String)),
+    DropIncoming(String),
+    PassIncoming(String),
+    DropOutgoing(String),
+    PassOutgoing(String),
+    MakePartition((Vec<String>, Vec<String>)),
+    ResetNetwork(),
 }
 
 pub struct EventController {
@@ -152,6 +160,44 @@ impl EventController {
                 Event::TypeTimerRemoved(e) => {
                     self.timers.get_mut(&e.id).unwrap().time_removed = e.timestamp;
                 }
+                Event::TypeLinkDisabled(e) => {
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::DisableLink((e.from, e.to)),
+                    ));
+                }
+                Event::TypeLinkEnabled(e) => {
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::EnableLink((e.from, e.to)),
+                    ));
+                }
+                Event::TypeDropIncoming(e) => {
+                    self.commands
+                        .push((e.timestamp, ControllerStateCommand::DropIncoming(e.node_id)));
+                }
+                Event::TypePassIncoming(e) => {
+                    self.commands
+                        .push((e.timestamp, ControllerStateCommand::PassIncoming(e.node_id)));
+                }
+                Event::TypeDropOutgoing(e) => {
+                    self.commands
+                        .push((e.timestamp, ControllerStateCommand::DropOutgoing(e.node_id)));
+                }
+                Event::TypePassOutgoing(e) => {
+                    self.commands
+                        .push((e.timestamp, ControllerStateCommand::PassOutgoing(e.node_id)));
+                }
+                Event::TypeMakePartition(e) => {
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::MakePartition((e.group1, e.group2)),
+                    ));
+                }
+                Event::TypeResetNetwork(e) => {
+                    self.commands
+                        .push((e.timestamp, ControllerStateCommand::ResetNetwork()));
+                }
             }
         }
     }
@@ -162,7 +208,7 @@ impl EventController {
             //println!("{}", command.0);
             match &command.1 {
                 ControllerStateCommand::AddNode(node) => {
-                    state.add_node(0.0, node.id.clone(), node.pos);
+                    state.add_node(command.0, node.id.clone(), node.pos);
                 }
                 ControllerStateCommand::SendMessage(id) => {
                     let msg = self.messages.get(id).unwrap();
@@ -206,6 +252,30 @@ impl EventController {
                         timer.delay,
                         timer.time_removed,
                     );
+                }
+                ControllerStateCommand::DisableLink(link) => {
+                    state.process_link_disabled(command.0, link.0.clone(), link.1.clone());
+                }
+                ControllerStateCommand::EnableLink(link) => {
+                    state.process_link_enabled(command.0, link.0.clone(), link.1.clone());
+                }
+                ControllerStateCommand::DropIncoming(node_id) => {
+                    state.process_drop_incoming(command.0, node_id.clone());
+                }
+                ControllerStateCommand::PassIncoming(node_id) => {
+                    state.process_pass_incoming(command.0, node_id.clone());
+                }
+                ControllerStateCommand::DropOutgoing(node_id) => {
+                    state.process_drop_outgoing(command.0, node_id.clone());
+                }
+                ControllerStateCommand::PassOutgoing(node_id) => {
+                    state.process_pass_outgoing(command.0, node_id.clone());
+                }
+                ControllerStateCommand::MakePartition((group1, group2)) => {
+                    state.process_make_partition(command.0, group1.clone(), group2.clone());
+                }
+                ControllerStateCommand::ResetNetwork() => {
+                    state.process_reset_network(command.0);
                 }
             }
         }
