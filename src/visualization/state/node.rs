@@ -8,7 +8,8 @@ use super::{local_message::StateLocalMessage, timer::*};
 
 #[derive(Debug, Clone)]
 pub struct StateNode {
-    pub id: String,
+    pub name: String,
+    pub id: u32,
     pub pos: Vec2,
     pub connected: bool,
     pub local_messages_sent: Vec<StateLocalMessage>,
@@ -65,19 +66,19 @@ impl StateNode {
         );
 
         let font_size = (NODE_RADIUS * 2.0).floor() as u16;
-        let text_size = measure_text(&self.id, None, font_size, 1.0);
+        let text_size = measure_text(&self.name, None, font_size, 1.0);
         let text_position = Vec2::new(
             self.pos.x - text_size.width / 2.0,
             self.pos.y + text_size.height / 2.0,
         );
 
         draw_text_ex(
-            &self.id,
+            &self.name,
             text_position.x,
             text_position.y,
             TextParams {
                 font_size,
-                color: BLACK,
+                color: WHITE,
                 ..Default::default()
             },
         );

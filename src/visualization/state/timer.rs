@@ -8,7 +8,7 @@ use crate::visualization::utilities::*;
 pub struct StateTimer {
     pub id: String,
     pub time_set: f64,
-    pub node_id: String,
+    pub node_name: String,
     pub delay: f64,
     pub time_removed: f64,
     pub k: i32,

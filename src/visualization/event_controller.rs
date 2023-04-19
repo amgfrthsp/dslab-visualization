@@ -72,9 +72,10 @@ impl EventController {
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
             if let Event::TypeNodeAdded(node_added) = &events[i] {
                 self.commands.push((
-                    0.0,
+                    node_added.timestamp,
                     ControllerStateCommand::AddNode(ControllerNode {
-                        id: node_added.id.clone(),
+                        name: node_added.name.clone(),
+                        id: node_added.id,
                         pos,
                     }),
                 ));
@@ -89,13 +90,17 @@ impl EventController {
                     let pos = Vec2::from((x * screen_height(), y * screen_width()));
                     self.commands.push((
                         e.timestamp,
-                        ControllerStateCommand::AddNode(ControllerNode { id: e.id, pos }),
+                        ControllerStateCommand::AddNode(ControllerNode {
+                            name: e.name,
+                            id: e.id,
+                            pos,
+                        }),
                     ));
                 }
                 Event::TypeLocalMessageSent(e) => {
                     let msg = ControllerLocalMessage {
                         id: e.msg.id.clone(),
-                        node_id: e.msg.node_id,
+                        node_name: e.msg.node_name,
                         data: e.msg.data,
                         timestampt: e.timestamp,
                         msg_type: LocalMessageType::Sent,
@@ -109,7 +114,7 @@ impl EventController {
                 Event::TypeLocalMessageReceived(e) => {
                     let msg = ControllerLocalMessage {
                         id: e.msg.id.clone(),
-                        node_id: e.msg.node_id,
+                        node_name: e.msg.node_name,
                         data: e.msg.data,
                         timestampt: e.timestamp,
                         msg_type: LocalMessageType::Received,
@@ -138,17 +143,21 @@ impl EventController {
                     self.messages.get_mut(&e.id).unwrap().time_received = e.timestamp;
                 }
                 Event::TypeNodeDisconnected(e) => {
-                    self.commands
-                        .push((e.timestamp, ControllerStateCommand::NodeDisconnected(e.id)));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::NodeDisconnected(e.node_name),
+                    ));
                 }
                 Event::TypeNodeConnected(e) => {
-                    self.commands
-                        .push((e.timestamp, ControllerStateCommand::NodeConnected(e.id)));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::NodeConnected(e.node_name),
+                    ));
                 }
                 Event::TypeTimerSet(e) => {
                     let timer = ControllerTimer {
                         id: e.timer.id.clone(),
-                        node_id: e.timer.node_id,
+                        node_name: e.timer.node_name,
                         delay: e.timer.delay,
                         time_set: e.timestamp,
                         time_removed: -1.,
@@ -173,20 +182,28 @@ impl EventController {
                     ));
                 }
                 Event::TypeDropIncoming(e) => {
-                    self.commands
-                        .push((e.timestamp, ControllerStateCommand::DropIncoming(e.node_id)));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::DropIncoming(e.node_name),
+                    ));
                 }
                 Event::TypePassIncoming(e) => {
-                    self.commands
-                        .push((e.timestamp, ControllerStateCommand::PassIncoming(e.node_id)));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::PassIncoming(e.node_name),
+                    ));
                 }
                 Event::TypeDropOutgoing(e) => {
-                    self.commands
-                        .push((e.timestamp, ControllerStateCommand::DropOutgoing(e.node_id)));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::DropOutgoing(e.node_name),
+                    ));
                 }
                 Event::TypePassOutgoing(e) => {
-                    self.commands
-                        .push((e.timestamp, ControllerStateCommand::PassOutgoing(e.node_id)));
+                    self.commands.push((
+                        e.timestamp,
+                        ControllerStateCommand::PassOutgoing(e.node_name),
+                    ));
                 }
                 Event::TypeMakePartition(e) => {
                     self.commands.push((
@@ -208,7 +225,7 @@ impl EventController {
             //println!("{}", command.0);
             match &command.1 {
                 ControllerStateCommand::AddNode(node) => {
-                    state.add_node(command.0, node.id.clone(), node.pos);
+                    state.add_node(command.0, node.name.clone(), node.id, node.pos);
                 }
                 ControllerStateCommand::SendMessage(id) => {
                     let msg = self.messages.get(id).unwrap();
@@ -232,23 +249,23 @@ impl EventController {
                     state.process_local_message(
                         msg.timestampt,
                         msg.id.clone(),
-                        msg.node_id.clone(),
+                        msg.node_name.clone(),
                         msg.data.clone(),
                         is_sent,
                     );
                 }
-                ControllerStateCommand::NodeDisconnected(id) => {
-                    state.process_node_disconnected(command.0, id.to_string())
+                ControllerStateCommand::NodeDisconnected(node_name) => {
+                    state.process_node_disconnected(command.0, node_name.clone())
                 }
-                ControllerStateCommand::NodeConnected(id) => {
-                    state.process_node_connected(command.0, id.to_string())
+                ControllerStateCommand::NodeConnected(node_name) => {
+                    state.process_node_connected(command.0, node_name.clone())
                 }
                 ControllerStateCommand::TimerSet(id) => {
                     let timer = self.timers.get(id).unwrap();
                     state.process_timer_set(
                         timer.id.clone(),
                         timer.time_set,
-                        timer.node_id.clone(),
+                        timer.node_name.clone(),
                         timer.delay,
                         timer.time_removed,
                     );
@@ -259,17 +276,17 @@ impl EventController {
                 ControllerStateCommand::EnableLink(link) => {
                     state.process_link_enabled(command.0, link.0.clone(), link.1.clone());
                 }
-                ControllerStateCommand::DropIncoming(node_id) => {
-                    state.process_drop_incoming(command.0, node_id.clone());
+                ControllerStateCommand::DropIncoming(node_name) => {
+                    state.process_drop_incoming(command.0, node_name.clone());
                 }
-                ControllerStateCommand::PassIncoming(node_id) => {
-                    state.process_pass_incoming(command.0, node_id.clone());
+                ControllerStateCommand::PassIncoming(node_name) => {
+                    state.process_pass_incoming(command.0, node_name.clone());
                 }
-                ControllerStateCommand::DropOutgoing(node_id) => {
-                    state.process_drop_outgoing(command.0, node_id.clone());
+                ControllerStateCommand::DropOutgoing(node_name) => {
+                    state.process_drop_outgoing(command.0, node_name.clone());
                 }
-                ControllerStateCommand::PassOutgoing(node_id) => {
-                    state.process_pass_outgoing(command.0, node_id.clone());
+                ControllerStateCommand::PassOutgoing(node_name) => {
+                    state.process_pass_outgoing(command.0, node_name.clone());
                 }
                 ControllerStateCommand::MakePartition((group1, group2)) => {
                     state.process_make_partition(command.0, group1.clone(), group2.clone());
@@ -289,7 +306,7 @@ pub enum LocalMessageType {
 
 pub struct ControllerLocalMessage {
     id: String,
-    node_id: String,
+    node_name: String,
     data: String,
     timestampt: f64,
     msg_type: LocalMessageType,
@@ -307,7 +324,7 @@ pub struct ControllerMessage {
 
 pub struct ControllerTimer {
     id: String,
-    node_id: String,
+    node_name: String,
     time_set: f64,
     delay: f64,
     time_removed: f64,
@@ -315,6 +332,7 @@ pub struct ControllerTimer {
 
 #[derive(Debug)]
 pub struct ControllerNode {
-    id: String,
+    name: String,
+    id: u32,
     pos: Vec2,
 }

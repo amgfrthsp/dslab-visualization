@@ -29,7 +29,8 @@ pub enum Event {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventNodeAdded {
     pub timestamp: f64,
-    pub id: String,
+    pub name: String,
+    pub id: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -59,13 +60,13 @@ pub struct EventMessageReceived {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventNodeConnected {
     pub timestamp: f64,
-    pub id: String,
+    pub node_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventNodeDisconnected {
     pub timestamp: f64,
-    pub id: String,
+    pub node_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -97,25 +98,25 @@ pub struct EventLinkEnabled {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventDropIncoming {
     pub timestamp: f64,
-    pub node_id: String,
+    pub node_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventPassIncoming {
     pub timestamp: f64,
-    pub node_id: String,
+    pub node_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventDropOutgoing {
     pub timestamp: f64,
-    pub node_id: String,
+    pub node_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct EventPassOutgoing {
     pub timestamp: f64,
-    pub node_id: String,
+    pub node_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -133,7 +134,7 @@ pub struct EventResetNetwork {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LocalMessage {
     pub id: String,
-    pub node_id: String,
+    pub node_name: String,
     pub data: String,
 }
 
@@ -149,6 +150,6 @@ pub struct Message {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timer {
     pub id: String,
-    pub node_id: String,
+    pub node_name: String,
     pub delay: f64,
 }
