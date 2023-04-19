@@ -1,6 +1,7 @@
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet, VecDeque},
+    f32::consts::PI,
     rc::Rc,
 };
 
@@ -67,6 +68,7 @@ pub struct State {
     drop_outgoing: HashSet<String>,
     drop_incoming: HashSet<String>,
     disabled_links: HashSet<(String, String)>,
+    partition: Option<(Vec<String>, Vec<String>)>,
 }
 
 impl State {
@@ -95,6 +97,7 @@ impl State {
             drop_outgoing: HashSet::new(),
             drop_incoming: HashSet::new(),
             disabled_links: HashSet::new(),
+            partition: None,
             node_colors: VecDeque::from([
                 ORANGE, YELLOW, GREEN, SKYBLUE, BLUE, PURPLE, GOLD, LIGHTGRAY, PINK, LIME, VIOLET,
                 WHITE, MAGENTA,
@@ -341,6 +344,11 @@ impl State {
     }
 
     pub fn draw(&mut self) {
+        if self.partition.is_some() {
+            let start = (screen_width() / 2., 0.);
+            let end = (screen_width() / 2., screen_height());
+            draw_line(start.0, start.1, end.0, end.1, 5., LIGHTGRAY);
+        }
         for (node_name, node) in &self.nodes {
             let show_events = *self.ui_data.show_events_for_node.get(node_name).unwrap();
             node.borrow()
@@ -630,6 +638,13 @@ impl State {
                     ui.label(format!("{:?}", self.drop_incoming));
                     ui.strong("Drop outgoing:");
                     ui.label(format!("{:?}", self.drop_outgoing));
+                    ui.strong("Partition:");
+                    if self.partition.is_none() {
+                        ui.label("---");
+                    } else {
+                        let pair = self.partition.clone().unwrap();
+                        ui.label(format!("{:?} -x- {:?}", pair.0, pair.1));
+                    }
                     ui.strong("Disabled links:");
                     let mut shown: HashSet<(String, String)> = HashSet::new();
                     for (from, to) in &self.disabled_links {
@@ -721,13 +736,39 @@ impl State {
             StateEvent::PassOutgoing(node_name) => {
                 self.drop_outgoing.remove(&node_name);
             }
-            StateEvent::MakePartition((group1, group2)) => {}
+            StateEvent::MakePartition((group1, group2)) => {
+                let left = Vec2::new(screen_width() / 4., screen_height() / 2.);
+                let right = Vec2::new(screen_width() * 3. / 4., screen_height() / 2.);
+                self.make_node_circle(group1.clone(), left, PARTITIONED_CIRCLE_RADIUS);
+                self.make_node_circle(group2.clone(), right, PARTITIONED_CIRCLE_RADIUS);
+                for node1 in &group1 {
+                    for node2 in &group2 {
+                        self.disabled_links.insert((node1.clone(), node2.clone()));
+                        self.disabled_links.insert((node2.clone(), node1.clone()));
+                    }
+                }
+                self.partition = Some((group1, group2));
+            }
             StateEvent::ResetNetwork() => {
                 self.drop_incoming.clear();
                 self.drop_outgoing.clear();
                 self.disabled_links.clear();
+                let center = Vec2::new(screen_width() / 2., screen_height() / 2.);
+                self.make_node_circle(
+                    self.ui_data.ordered_node_names.clone(),
+                    center,
+                    CIRCLE_RADIUS,
+                );
             }
         }
         true
+    }
+
+    pub fn make_node_circle(&mut self, nodes: Vec<String>, center: Vec2, circle_radius: f32) {
+        for i in 0..nodes.len() {
+            let angle = (2.0 * PI / (nodes.len() as f32)) * (i as f32);
+            let pos = center + Vec2::from_angle(angle as f32) * circle_radius;
+            self.nodes.get_mut(&nodes[i]).unwrap().borrow_mut().pos = pos;
+        }
     }
 }
