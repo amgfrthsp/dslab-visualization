@@ -464,6 +464,7 @@ impl State {
             self.draw_ui_hovered_timer(egui_ctx);
             self.draw_ui_node_windows(egui_ctx);
             self.draw_ui_msg_windows(egui_ctx);
+            self.draw_ui_network_window(egui_ctx);
         });
     }
 
@@ -617,6 +618,32 @@ impl State {
                     ui.label(format!("Data: {}", msg.data.clone()));
                 });
         }
+    }
+
+    pub fn draw_ui_network_window(&mut self, egui_ctx: &Context) {
+        egui::Window::new("Network")
+            .default_pos((screen_width() * 0.8, 15.))
+            .show(egui_ctx, |ui| {
+                ui.set_max_height(screen_height() * 0.5);
+                ScrollArea::vertical().show(ui, |ui| {
+                    ui.strong("\nDrop incoming:");
+                    ui.label(format!("{:?}", self.drop_incoming));
+                    ui.strong("Drop outgoing:");
+                    ui.label(format!("{:?}", self.drop_outgoing));
+                    ui.strong("Disabled links:");
+                    let mut shown: HashSet<(String, String)> = HashSet::new();
+                    for (from, to) in &self.disabled_links {
+                        let pair = (to.to_string(), from.to_string());
+                        if self.disabled_links.contains(&pair) && !shown.contains(&pair) {
+                            shown.insert(pair);
+                            ui.label(format!("{} <-xx-> {}", from, to));
+                        } else {
+                            ui.label(format!("{} -xx-> {}", from, to));
+                        }
+                    }
+                });
+                ui.set_max_height(f32::INFINITY);
+            });
     }
 
     pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
