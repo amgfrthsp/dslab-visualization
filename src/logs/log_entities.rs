@@ -16,7 +16,6 @@ pub enum Event {
     TypeNodeDisconnected(EventNodeDisconnected),
     TypeTimerSet(EventTimerSet),
     TypeTimerRemoved(EventTimerRemoved),
-
     TypeLinkDisabled(EventLinkDisabled),
     TypeLinkEnabled(EventLinkEnabled),
     TypeDropIncoming(EventDropIncoming),
