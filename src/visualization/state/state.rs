@@ -69,6 +69,7 @@ pub struct State {
     drop_incoming: HashSet<String>,
     disabled_links: HashSet<(String, String)>,
     partition: Option<(Vec<String>, Vec<String>)>,
+    prev_screen_size: (f32, f32),
 }
 
 impl State {
@@ -98,6 +99,7 @@ impl State {
             drop_incoming: HashSet::new(),
             disabled_links: HashSet::new(),
             partition: None,
+            prev_screen_size: (0., 0.),
             node_colors: VecDeque::from([
                 ORANGE, YELLOW, GREEN, SKYBLUE, BLUE, PURPLE, GOLD, LIGHTGRAY, PINK, LIME, VIOLET,
                 WHITE, MAGENTA,
@@ -300,6 +302,28 @@ impl State {
     }
 
     pub fn update(&mut self) {
+        let screen_size = (screen_width(), screen_height());
+        if screen_size != self.prev_screen_size {
+            for (_, msg) in &mut self.travelling_messages {
+                let old_pos = msg.borrow().src.borrow().pos;
+                msg.borrow_mut().pos -= old_pos;
+            }
+            if self.partition.is_some() {
+                self.partition_nodes();
+            } else {
+                let center = Vec2::from((screen_width() / 2., screen_height() / 2.));
+                self.make_node_circle(
+                    self.ui_data.ordered_node_names.clone(),
+                    center,
+                    CIRCLE_RADIUS,
+                );
+            }
+            for (_, msg) in &mut self.travelling_messages {
+                let new_pos = msg.borrow().src.borrow().pos;
+                msg.borrow_mut().pos += new_pos;
+            }
+        }
+        self.prev_screen_size = screen_size;
         self.check_keyboard_events();
 
         if self.paused {
@@ -737,10 +761,6 @@ impl State {
                 self.drop_outgoing.remove(&node_name);
             }
             StateEvent::MakePartition((group1, group2)) => {
-                let left = Vec2::new(screen_width() / 4., screen_height() / 2.);
-                let right = Vec2::new(screen_width() * 3. / 4., screen_height() / 2.);
-                self.make_node_circle(group1.clone(), left, PARTITIONED_CIRCLE_RADIUS);
-                self.make_node_circle(group2.clone(), right, PARTITIONED_CIRCLE_RADIUS);
                 for node1 in &group1 {
                     for node2 in &group2 {
                         self.disabled_links.insert((node1.clone(), node2.clone()));
@@ -748,6 +768,7 @@ impl State {
                     }
                 }
                 self.partition = Some((group1, group2));
+                self.partition_nodes();
             }
             StateEvent::ResetNetwork() => {
                 self.drop_incoming.clear();
@@ -762,6 +783,17 @@ impl State {
             }
         }
         true
+    }
+
+    pub fn partition_nodes(&mut self) {
+        if self.partition.is_none() {
+            return;
+        }
+        let (group1, group2) = self.partition.clone().unwrap();
+        let left = Vec2::new(screen_width() / 4., screen_height() / 2.);
+        let right = Vec2::new(screen_width() * 3. / 4., screen_height() / 2.);
+        self.make_node_circle(group1, left, PARTITIONED_CIRCLE_RADIUS);
+        self.make_node_circle(group2, right, PARTITIONED_CIRCLE_RADIUS);
     }
 
     pub fn make_node_circle(&mut self, nodes: Vec<String>, center: Vec2, circle_radius: f32) {
