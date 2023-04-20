@@ -1,8 +1,6 @@
-{"TypeNodeAdded":{"timestamp":0.0,"name":"server-node","id":1}}
-{"TypeNodeAdded":{"timestamp":0.0,"name":"client-node","id":2}}
-{"TypeMessageSent":{"timestamp":0.0,"msg":{"id":"0","src":"client-node","dest":"server-node","tip":"PING","data":"{\"value\": \"Hello0!\"}"}}}
-{"TypeMessageReceived":{"timestamp":1.0092994785803933,"id":"0"}}
-{"TypeMessageSent":{"timestamp":1.0092994785803933,"msg":{"id":"1","src":"server-node","dest":"client-node","tip":"PONG","data":"{\"value\": \"Hello0!\"}"}}}
-{"TypeMessageReceived":{"timestamp":2.3121069546558592,"id":"1"}}
-{"TypeMessageSent":{"timestamp":2.3121069546558592,"msg":{"id":"2","src":"client-node","dest":"server-node","tip":"PING","data":"{\"value\": \"Hello1!\"}"}}}
-{"TypeMessageReceived":{"timestamp":4.131071590136219,"id":"2"}}
+{"NodeAdded":{"time":0.0,"node_name":"server-node","node_id":1}}
+{"NodeAdded":{"time":0.0,"node_name":"client-node","node_id":2}}
+{"MessageSent":{"time":0.0,"msg_id":"0","src":"client-node","dest":"server-node","msg_tip":"PING","msg_data":"{\"value\": \"Hello!\"}"}}
+{"MessageReceived":{"time":1.0,"msg_id":"0"}}
+{"MessageSent":{"time":1.0,"msg_id":"1","src":"server-node","dest":"client-node","msg_tip":"PONG","msg_data":"{\"value\": \"Hello!\"}"}}
+{"MessageReceived":{"time":2.0,"msg_id":"1"}}

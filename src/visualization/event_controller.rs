@@ -52,7 +52,6 @@ impl EventController {
 
         for line in reader.lines() {
             let event: Event = serde_json::from_str(&line.unwrap()).unwrap();
-            //println!("{:?}", event);
             events.push(event);
         }
 
@@ -147,7 +146,6 @@ impl EventController {
                     msg_tip,
                     msg_data,
                 } => {
-                    println!("SENT {}", msg_id);
                     let msg = ControllerMessage {
                         id: msg_id.clone(),
                         src,
@@ -162,7 +160,6 @@ impl EventController {
                         .push((time, ControllerStateCommand::SendMessage(msg_id)));
                 }
                 Event::MessageReceived { time, msg_id } => {
-                    println!("RECEIVED {}", msg_id);
                     self.messages.get_mut(&msg_id).unwrap().time_received = time;
                 }
                 Event::NodeDisconnected { time, node_name } => {
@@ -238,7 +235,6 @@ impl EventController {
     pub fn send_commands(&mut self, state: &mut State) {
         self.commands.sort_by(|a, b| a.0.total_cmp(&b.0));
         for command in &self.commands {
-            //println!("{}", command.0);
             match &command.1 {
                 ControllerStateCommand::AddNode(node) => {
                     state.add_node(command.0, node.name.clone(), node.id, node.pos);

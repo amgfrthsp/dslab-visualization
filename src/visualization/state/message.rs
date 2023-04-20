@@ -86,7 +86,7 @@ impl StateMessage {
 
     pub fn update_status(&mut self) {
         if self.is_delivered() {
-            self.status = if self.drop {
+            self.status = if self.drop && !(self.src.borrow().id == self.dest.borrow().id) {
                 MessageStatus::Dropped
             } else {
                 MessageStatus::Delivered
