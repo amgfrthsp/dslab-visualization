@@ -36,7 +36,7 @@ pub enum StateEvent {
 
 #[derive(Clone)]
 pub struct EventQueueItem {
-    timestamp: f64,
+    time: f64,
     event: StateEvent,
 }
 
@@ -107,7 +107,7 @@ impl State {
         }
     }
 
-    pub fn add_node(&mut self, timestamp: f64, name: String, id: u32, pos: Vec2) {
+    pub fn add_node(&mut self, time: f64, name: String, id: u32, pos: Vec2) {
         let color = self.node_colors.pop_front().unwrap_or(DEFAULT_NODE_COLOR);
         let node = StateNode {
             name,
@@ -128,7 +128,7 @@ impl State {
             .insert(node.name.clone(), true);
         self.ui_data.ordered_node_names.push(node.name.clone());
         self.event_queue.push_back(EventQueueItem {
-            timestamp,
+            time: time,
             event: StateEvent::AddNode(node.name.clone()),
         });
         self.nodes
@@ -138,7 +138,7 @@ impl State {
     pub fn send_message(
         &mut self,
         id: String,
-        timestamp: f64,
+        time: f64,
         src: &str,
         dest: &str,
         tip: String,
@@ -158,22 +158,22 @@ impl State {
             tip,
             data,
             status: MessageStatus::Queued,
-            time_sent: timestamp as f32,
-            time_delivered: timestamp as f32 + duration,
+            time_sent: time as f32,
+            time_delivered: time as f32 + duration,
             drop: duration <= 0.0,
             last_color_change: 0.,
             drop_color: WHITE,
         };
         self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::SendMessage(id),
         });
     }
 
     pub fn process_local_message(
         &mut self,
-        timestamp: f64,
+        time: f64,
         id: String,
         node_name: String,
         data: String,
@@ -191,7 +191,7 @@ impl State {
         }
         let msg = StateLocalMessage {
             id: id.clone(),
-            timestamp,
+            time: time,
             node_name,
             data,
             msg_type,
@@ -199,21 +199,21 @@ impl State {
         self.local_messages.insert(id, msg);
 
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: event,
         });
     }
 
-    pub fn process_node_disconnected(&mut self, timestamp: f64, node_name: String) {
+    pub fn process_node_disconnected(&mut self, time: f64, node_name: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::NodeDisconnected(node_name),
         });
     }
 
-    pub fn process_node_connected(&mut self, timestamp: f64, node_name: String) {
+    pub fn process_node_connected(&mut self, time: f64, node_name: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::NodeConnected(node_name),
         });
     }
@@ -235,68 +235,63 @@ impl State {
             k: -1,
         };
         self.event_queue.push_back(EventQueueItem {
-            timestamp: time_set,
+            time: time_set,
             event: StateEvent::TimerSet(timer),
         });
     }
 
-    pub fn process_link_disabled(&mut self, timestamp: f64, from: String, to: String) {
+    pub fn process_link_disabled(&mut self, time: f64, from: String, to: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::LinkDisabled((from, to)),
         });
     }
 
-    pub fn process_link_enabled(&mut self, timestamp: f64, from: String, to: String) {
+    pub fn process_link_enabled(&mut self, time: f64, from: String, to: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::LinkEnabled((from, to)),
         });
     }
 
-    pub fn process_drop_incoming(&mut self, timestamp: f64, node_name: String) {
+    pub fn process_drop_incoming(&mut self, time: f64, node_name: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::DropIncoming(node_name),
         });
     }
 
-    pub fn process_pass_incoming(&mut self, timestamp: f64, node_name: String) {
+    pub fn process_pass_incoming(&mut self, time: f64, node_name: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::PassIncoming(node_name),
         });
     }
 
-    pub fn process_drop_outgoing(&mut self, timestamp: f64, node_name: String) {
+    pub fn process_drop_outgoing(&mut self, time: f64, node_name: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::DropOutgoing(node_name),
         });
     }
 
-    pub fn process_pass_outgoing(&mut self, timestamp: f64, node_name: String) {
+    pub fn process_pass_outgoing(&mut self, time: f64, node_name: String) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::PassOutgoing(node_name),
         });
     }
 
-    pub fn process_make_partition(
-        &mut self,
-        timestamp: f64,
-        group1: Vec<String>,
-        group2: Vec<String>,
-    ) {
+    pub fn process_make_partition(&mut self, time: f64, group1: Vec<String>, group2: Vec<String>) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::MakePartition((group1, group2)),
         });
     }
 
-    pub fn process_reset_network(&mut self, timestamp: f64) {
+    pub fn process_reset_network(&mut self, time: f64) {
         self.event_queue.push_back(EventQueueItem {
-            timestamp: timestamp,
+            time: time,
             event: StateEvent::ResetNetwork(),
         });
     }
@@ -335,7 +330,7 @@ impl State {
         }
 
         while let Some(event) = self.event_queue.front() {
-            if self.process_event(event.timestamp, event.event.clone()) {
+            if self.process_event(event.time, event.event.clone()) {
                 self.event_queue.pop_front();
             } else {
                 break;
@@ -409,7 +404,7 @@ impl State {
             self.paused = !self.paused;
         }
         if is_key_pressed(KeyCode::Right) && !self.event_queue.is_empty() {
-            let new_current_time = self.event_queue.front().unwrap().timestamp - 0.01;
+            let new_current_time = self.event_queue.front().unwrap().time - 0.01;
             let delta = self.current_time - new_current_time;
             for (_, msg) in &self.travelling_messages {
                 msg.borrow_mut().update_with_jump(
@@ -506,7 +501,7 @@ impl State {
             if self.event_queue.is_empty() {
                 next_event_at = "--".to_owned();
             } else {
-                next_event_at = format!("{:.4}", self.event_queue.front().unwrap().timestamp);
+                next_event_at = format!("{:.4}", self.event_queue.front().unwrap().time);
             }
             ui.label(format!("Next event at: {}", next_event_at));
             ui.add(Checkbox::new(&mut self.ui_data.show_timers, "Show timers"));
@@ -569,7 +564,7 @@ impl State {
                         ScrollArea::vertical().show(ui, |ui| {
                             for msg in &node.local_messages_sent {
                                 ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("Sent at: {}", msg.timestamp));
+                                ui.label(format!("Sent at: {}", msg.time));
                                 ui.label(format!("Data: {}", msg.data));
                                 ui.separator();
                             }
@@ -581,7 +576,7 @@ impl State {
                         ScrollArea::vertical().show(ui, |ui| {
                             for msg in &node.local_messages_received {
                                 ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("Received at: {}", msg.timestamp));
+                                ui.label(format!("Received at: {}", msg.time));
                                 ui.label(format!("Data: {}", msg.data));
                                 ui.separator();
                             }
@@ -685,8 +680,8 @@ impl State {
             });
     }
 
-    pub fn process_event(&mut self, timestamp: f64, event: StateEvent) -> bool {
-        if self.current_time < timestamp {
+    pub fn process_event(&mut self, time: f64, event: StateEvent) -> bool {
+        if self.current_time < time {
             return false;
         }
         match event {

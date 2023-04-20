@@ -1,7 +1,7 @@
 #[derive(Debug, Clone)]
 pub struct StateLocalMessage {
     pub id: String,
-    pub timestamp: f64,
+    pub time: f64,
     pub node_name: String,
     pub data: String,
     pub msg_type: LocalMessageType,

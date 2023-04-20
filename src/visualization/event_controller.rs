@@ -59,7 +59,12 @@ impl EventController {
         let mut node_cnt = 0;
 
         for event in &events {
-            if let Event::TypeNodeAdded(_) = event {
+            if let Event::NodeAdded {
+                time: _,
+                node_name: _,
+                node_id: _,
+            } = event
+            {
                 node_cnt += 1;
             } else {
                 break;
@@ -70,12 +75,17 @@ impl EventController {
         for i in 0..node_cnt {
             let angle = (2.0 * PI / (node_cnt as f32)) * (i as f32);
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
-            if let Event::TypeNodeAdded(node_added) = &events[i] {
+            if let Event::NodeAdded {
+                time,
+                node_name,
+                node_id,
+            } = &events[i]
+            {
                 self.commands.push((
-                    node_added.timestamp,
+                    *time,
                     ControllerStateCommand::AddNode(ControllerNode {
-                        name: node_added.name.clone(),
-                        id: node_added.id,
+                        name: node_name.clone(),
+                        id: *node_id,
                         pos,
                     }),
                 ));
@@ -84,136 +94,142 @@ impl EventController {
 
         for event in events.split_off(node_cnt) {
             match event {
-                Event::TypeNodeAdded(e) => {
+                Event::NodeAdded {
+                    time,
+                    node_name,
+                    node_id,
+                } => {
                     let x = gen_range(0.3, 0.8);
                     let y = gen_range(0.3, 0.8);
                     let pos = Vec2::from((x * screen_height(), y * screen_width()));
                     self.commands.push((
-                        e.timestamp,
+                        time,
                         ControllerStateCommand::AddNode(ControllerNode {
-                            name: e.name,
-                            id: e.id,
+                            name: node_name,
+                            id: node_id,
                             pos,
                         }),
                     ));
                 }
-                Event::TypeLocalMessageSent(e) => {
-                    let msg = ControllerLocalMessage {
-                        id: e.msg.id.clone(),
-                        node_name: e.msg.node_name,
-                        data: e.msg.data,
-                        timestampt: e.timestamp,
+                Event::LocalMessageSent { time, msg } => {
+                    let controller_msg = ControllerLocalMessage {
+                        id: msg.id.clone(),
+                        node_name: msg.node_name,
+                        data: msg.data,
+                        time: time,
                         msg_type: LocalMessageType::Sent,
                     };
-                    self.local_messages.insert(e.msg.id.clone(), msg);
+                    self.local_messages.insert(msg.id.clone(), controller_msg);
                     self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::ProcessLocalMessage(e.msg.id),
+                        time,
+                        ControllerStateCommand::ProcessLocalMessage(msg.id.clone()),
                     ));
                 }
-                Event::TypeLocalMessageReceived(e) => {
-                    let msg = ControllerLocalMessage {
-                        id: e.msg.id.clone(),
-                        node_name: e.msg.node_name,
-                        data: e.msg.data,
-                        timestampt: e.timestamp,
+                Event::LocalMessageReceived { time, msg } => {
+                    let controller_msg = ControllerLocalMessage {
+                        id: msg.id.clone(),
+                        node_name: msg.node_name,
+                        data: msg.data,
+                        time: time,
                         msg_type: LocalMessageType::Received,
                     };
-                    self.local_messages.insert(e.msg.id.clone(), msg);
+                    self.local_messages.insert(msg.id.clone(), controller_msg);
                     self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::ProcessLocalMessage(e.msg.id),
+                        time,
+                        ControllerStateCommand::ProcessLocalMessage(msg.id.clone()),
                     ));
                 }
-                Event::TypeMessageSent(e) => {
+                Event::MessageSent {
+                    time,
+                    msg_id,
+                    src,
+                    dest,
+                    msg_tip,
+                    msg_data,
+                } => {
+                    println!("SENT {}", msg_id);
                     let msg = ControllerMessage {
-                        id: e.msg.id.clone(),
-                        src: e.msg.src,
-                        dest: e.msg.dest,
-                        tip: e.msg.tip,
-                        data: e.msg.data,
-                        time_sent: e.timestamp,
+                        id: msg_id.clone(),
+                        src,
+                        dest,
+                        tip: msg_tip,
+                        data: msg_data,
+                        time_sent: time,
                         time_received: -1.0,
                     };
-                    self.messages.insert(e.msg.id.clone(), msg);
+                    self.messages.insert(msg.id.clone(), msg);
                     self.commands
-                        .push((e.timestamp, ControllerStateCommand::SendMessage(e.msg.id)));
+                        .push((time, ControllerStateCommand::SendMessage(msg_id)));
                 }
-                Event::TypeMessageReceived(e) => {
-                    self.messages.get_mut(&e.id).unwrap().time_received = e.timestamp;
+                Event::MessageReceived { time, msg_id } => {
+                    println!("RECEIVED {}", msg_id);
+                    self.messages.get_mut(&msg_id).unwrap().time_received = time;
                 }
-                Event::TypeNodeDisconnected(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::NodeDisconnected(e.node_name),
-                    ));
+                Event::NodeDisconnected { time, node_name } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::NodeDisconnected(node_name)));
                 }
-                Event::TypeNodeConnected(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::NodeConnected(e.node_name),
-                    ));
+                Event::NodeConnected { time, node_name } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::NodeConnected(node_name)));
                 }
-                Event::TypeTimerSet(e) => {
+                Event::TimerSet {
+                    time,
+                    timer_id,
+                    node_name,
+                    delay,
+                } => {
                     let timer = ControllerTimer {
-                        id: e.timer.id.clone(),
-                        node_name: e.timer.node_name,
-                        delay: e.timer.delay,
-                        time_set: e.timestamp,
+                        id: timer_id.clone(),
+                        node_name: node_name,
+                        delay: delay,
+                        time_set: time,
                         time_removed: -1.,
                     };
-                    self.timers.insert(e.timer.id.clone(), timer);
+                    self.timers.insert(timer_id.clone(), timer);
                     self.commands
-                        .push((e.timestamp, ControllerStateCommand::TimerSet(e.timer.id)));
+                        .push((time, ControllerStateCommand::TimerSet(timer_id)));
                 }
-                Event::TypeTimerRemoved(e) => {
-                    self.timers.get_mut(&e.id).unwrap().time_removed = e.timestamp;
+                Event::TimerRemoved { time, timer_id } => {
+                    self.timers.get_mut(&timer_id).unwrap().time_removed = time;
                 }
-                Event::TypeLinkDisabled(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::DisableLink((e.from, e.to)),
-                    ));
-                }
-                Event::TypeLinkEnabled(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::EnableLink((e.from, e.to)),
-                    ));
-                }
-                Event::TypeDropIncoming(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::DropIncoming(e.node_name),
-                    ));
-                }
-                Event::TypePassIncoming(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::PassIncoming(e.node_name),
-                    ));
-                }
-                Event::TypeDropOutgoing(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::DropOutgoing(e.node_name),
-                    ));
-                }
-                Event::TypePassOutgoing(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::PassOutgoing(e.node_name),
-                    ));
-                }
-                Event::TypeMakePartition(e) => {
-                    self.commands.push((
-                        e.timestamp,
-                        ControllerStateCommand::MakePartition((e.group1, e.group2)),
-                    ));
-                }
-                Event::TypeResetNetwork(e) => {
+                Event::LinkDisabled { time, from, to } => {
                     self.commands
-                        .push((e.timestamp, ControllerStateCommand::ResetNetwork()));
+                        .push((time, ControllerStateCommand::DisableLink((from, to))));
+                }
+                Event::LinkEnabled { time, from, to } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::EnableLink((from, to))));
+                }
+                Event::DropIncoming { time, node_name } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::DropIncoming(node_name)));
+                }
+                Event::PassIncoming { time, node_name } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::PassIncoming(node_name)));
+                }
+                Event::DropOutgoing { time, node_name } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::DropOutgoing(node_name)));
+                }
+                Event::PassOutgoing { time, node_name } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::PassOutgoing(node_name)));
+                }
+                Event::MakePartition {
+                    time,
+                    group1,
+                    group2,
+                } => {
+                    self.commands.push((
+                        time,
+                        ControllerStateCommand::MakePartition((group1, group2)),
+                    ));
+                }
+                Event::ResetNetwork { time } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::ResetNetwork()));
                 }
             }
         }
@@ -247,7 +263,7 @@ impl EventController {
                         LocalMessageType::Sent => is_sent = true,
                     }
                     state.process_local_message(
-                        msg.timestampt,
+                        msg.time,
                         msg.id.clone(),
                         msg.node_name.clone(),
                         msg.data.clone(),
@@ -308,7 +324,7 @@ pub struct ControllerLocalMessage {
     id: String,
     node_name: String,
     data: String,
-    timestampt: f64,
+    time: f64,
     msg_type: LocalMessageType,
 }
 
