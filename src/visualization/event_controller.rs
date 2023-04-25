@@ -141,15 +141,19 @@ impl EventController {
                 Event::MessageSent {
                     time,
                     msg_id,
-                    src,
-                    dest,
+                    src_node,
+                    src_proc,
+                    dest_node,
+                    dest_proc,
                     msg_tip,
                     msg_data,
                 } => {
                     let msg = ControllerMessage {
                         id: msg_id.clone(),
-                        src,
-                        dest,
+                        src_node,
+                        src_proc,
+                        dest_node,
+                        dest_proc,
                         tip: msg_tip,
                         data: msg_data,
                         time_sent: time,
@@ -244,8 +248,8 @@ impl EventController {
                     state.send_message(
                         msg.id.clone(),
                         msg.time_sent,
-                        &msg.src,
-                        &msg.dest,
+                        &msg.src_node,
+                        &msg.dest_node,
                         msg.tip.clone(),
                         msg.data.clone(),
                         (msg.time_received - msg.time_sent) as f32,
@@ -326,8 +330,10 @@ pub struct ControllerLocalMessage {
 
 pub struct ControllerMessage {
     id: String,
-    src: String,
-    dest: String,
+    src_node: String,
+    src_proc: String,
+    dest_node: String,
+    dest_proc: String,
     tip: String,
     data: String,
     time_sent: f64,

@@ -23,8 +23,10 @@ pub enum Event {
     MessageSent {
         time: f64,
         msg_id: String,
-        src: String,
-        dest: String,
+        src_node: String,
+        src_proc: String,
+        dest_node: String,
+        dest_proc: String,
         msg_tip: String,
         msg_data: String,
     },

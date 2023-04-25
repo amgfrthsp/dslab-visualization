@@ -1,6 +1,6 @@
 {"NodeAdded":{"time":0.0,"node_name":"server-node","node_id":1}}
 {"NodeAdded":{"time":0.0,"node_name":"client-node","node_id":2}}
-{"MessageSent":{"time":0.0,"msg_id":"0","src":"client-node","dest":"server-node","msg_tip":"PING","msg_data":"{\"value\": \"Hello!\"}"}}
+{"MessageSent":{"time":0.0,"msg_id":"0","src_node":"client-node","src_proc":"client","dest_node":"server-node","dest_proc":"server","msg_tip":"PING","msg_data":"{\"value\": \"Hello!\"}"}}
 {"MessageReceived":{"time":1.0,"msg_id":"0"}}
-{"MessageSent":{"time":1.0,"msg_id":"1","src":"server-node","dest":"client-node","msg_tip":"PONG","msg_data":"{\"value\": \"Hello!\"}"}}
+{"MessageSent":{"time":1.0,"msg_id":"1","src_node":"server-node","src_proc":"server","dest_node":"client-node","dest_proc":"client","msg_tip":"PONG","msg_data":"{\"value\": \"Hello!\"}"}}
 {"MessageReceived":{"time":2.0,"msg_id":"1"}}
