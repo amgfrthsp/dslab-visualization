@@ -110,32 +110,50 @@ impl EventController {
                         }),
                     ));
                 }
-                Event::LocalMessageSent { time, msg } => {
+                Event::LocalMessageSent {
+                    time,
+                    msg_id,
+                    node_name,
+                    proc,
+                    msg_tip,
+                    msg_data,
+                } => {
                     let controller_msg = ControllerLocalMessage {
-                        id: msg.id.clone(),
-                        node_name: msg.node_name,
-                        data: msg.data,
-                        time: time,
+                        id: msg_id.clone(),
+                        node_name,
+                        proc,
+                        tip: msg_tip,
+                        data: msg_data,
+                        time,
                         msg_type: LocalMessageType::Sent,
                     };
-                    self.local_messages.insert(msg.id.clone(), controller_msg);
+                    self.local_messages.insert(msg_id.clone(), controller_msg);
                     self.commands.push((
                         time,
-                        ControllerStateCommand::ProcessLocalMessage(msg.id.clone()),
+                        ControllerStateCommand::ProcessLocalMessage(msg_id.clone()),
                     ));
                 }
-                Event::LocalMessageReceived { time, msg } => {
+                Event::LocalMessageReceived {
+                    time,
+                    msg_id,
+                    node_name,
+                    proc,
+                    msg_tip,
+                    msg_data,
+                } => {
                     let controller_msg = ControllerLocalMessage {
-                        id: msg.id.clone(),
-                        node_name: msg.node_name,
-                        data: msg.data,
-                        time: time,
+                        id: msg_id.clone(),
+                        node_name,
+                        proc,
+                        tip: msg_tip,
+                        data: msg_data,
+                        time,
                         msg_type: LocalMessageType::Received,
                     };
-                    self.local_messages.insert(msg.id.clone(), controller_msg);
+                    self.local_messages.insert(msg_id.clone(), controller_msg);
                     self.commands.push((
                         time,
-                        ControllerStateCommand::ProcessLocalMessage(msg.id.clone()),
+                        ControllerStateCommand::ProcessLocalMessage(msg_id.clone()),
                     ));
                 }
                 Event::MessageSent {
@@ -323,6 +341,8 @@ pub enum LocalMessageType {
 pub struct ControllerLocalMessage {
     id: String,
     node_name: String,
+    proc: String,
+    tip: String,
     data: String,
     time: f64,
     msg_type: LocalMessageType,

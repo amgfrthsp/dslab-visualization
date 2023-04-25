@@ -14,11 +14,19 @@ pub enum Event {
     },
     LocalMessageSent {
         time: f64,
-        msg: LocalMessage,
+        msg_id: String,
+        node_name: String,
+        proc: String,
+        msg_tip: String,
+        msg_data: String,
     },
     LocalMessageReceived {
         time: f64,
-        msg: LocalMessage,
+        msg_id: String,
+        node_name: String,
+        proc: String,
+        msg_tip: String,
+        msg_data: String,
     },
     MessageSent {
         time: f64,
@@ -86,11 +94,4 @@ pub enum Event {
     ResetNetwork {
         time: f64,
     },
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct LocalMessage {
-    pub id: String,
-    pub node_name: String,
-    pub data: String,
 }
