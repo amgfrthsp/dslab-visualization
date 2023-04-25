@@ -7,6 +7,7 @@ use crate::visualization::utilities::*;
 #[derive(Debug, Clone)]
 pub struct StateTimer {
     pub id: String,
+    pub name: String,
     pub time_set: f64,
     pub node_name: String,
     pub delay: f64,

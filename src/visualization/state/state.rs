@@ -221,6 +221,7 @@ impl State {
     pub fn process_timer_set(
         &mut self,
         id: String,
+        name: String,
         time_set: f64,
         node_name: String,
         delay: f64,
@@ -228,6 +229,7 @@ impl State {
     ) {
         let timer = StateTimer {
             id,
+            name,
             time_set,
             node_name,
             delay,
@@ -537,7 +539,7 @@ impl State {
             egui::Window::new("Timer")
                 .default_pos(mouse_position())
                 .show(egui_ctx, |ui| {
-                    ui.label(format!("Id: {}", timer.id));
+                    ui.label(format!("Name: {}", timer.name));
                     ui.label(format!("Timer delay: {}", timer.delay));
                     ui.label(format!("Time set: {}", timer.time_set));
                     ui.label(format!("Time removed: {}", timer.time_removed));
@@ -618,7 +620,7 @@ impl State {
                         ui.set_max_height(screen_height() * 0.3);
                         ScrollArea::vertical().show(ui, |ui| {
                             for timer in &node.timers {
-                                ui.label(format!("Timer {}", timer.id));
+                                ui.label(format!("Timer {}", timer.name));
                                 ui.label(format!("Time set: {}", timer.time_set));
                                 ui.label(format!("Delay: {}", timer.delay));
                                 ui.separator();

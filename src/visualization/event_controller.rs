@@ -195,13 +195,17 @@ impl EventController {
                 Event::TimerSet {
                     time,
                     timer_id,
+                    timer_name,
                     node_name,
+                    proc,
                     delay,
                 } => {
                     let timer = ControllerTimer {
                         id: timer_id.clone(),
-                        node_name: node_name,
-                        delay: delay,
+                        name: timer_name,
+                        node_name,
+                        proc,
+                        delay,
                         time_set: time,
                         time_removed: -1.,
                     };
@@ -209,7 +213,10 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::TimerSet(timer_id)));
                 }
-                Event::TimerRemoved { time, timer_id } => {
+                Event::TimerFired { time, timer_id } => {
+                    self.timers.get_mut(&timer_id).unwrap().time_removed = time;
+                }
+                Event::TimerCancelled { time, timer_id } => {
                     self.timers.get_mut(&timer_id).unwrap().time_removed = time;
                 }
                 Event::LinkDisabled { time, from, to } => {
@@ -298,6 +305,7 @@ impl EventController {
                     let timer = self.timers.get(id).unwrap();
                     state.process_timer_set(
                         timer.id.clone(),
+                        timer.name.clone(),
                         timer.time_set,
                         timer.node_name.clone(),
                         timer.delay,
@@ -362,7 +370,9 @@ pub struct ControllerMessage {
 
 pub struct ControllerTimer {
     id: String,
+    name: String,
     node_name: String,
+    proc: String,
     time_set: f64,
     delay: f64,
     time_removed: f64,

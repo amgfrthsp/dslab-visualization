@@ -53,10 +53,16 @@ pub enum Event {
     TimerSet {
         time: f64,
         timer_id: String,
+        timer_name: String,
         node_name: String,
+        proc: String,
         delay: f64,
     },
-    TimerRemoved {
+    TimerFired {
+        time: f64,
+        timer_id: String,
+    },
+    TimerCancelled {
         time: f64,
         timer_id: String,
     },
