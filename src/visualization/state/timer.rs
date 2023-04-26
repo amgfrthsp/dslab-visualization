@@ -9,7 +9,7 @@ pub struct StateTimer {
     pub id: String,
     pub name: String,
     pub time_set: f64,
-    pub node_name: String,
+    pub node: String,
     pub delay: f64,
     pub time_removed: f64,
     pub k: i32,

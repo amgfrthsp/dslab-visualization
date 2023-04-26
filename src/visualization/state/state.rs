@@ -42,7 +42,7 @@ pub struct EventQueueItem {
 
 #[derive(Clone)]
 pub struct UIData {
-    ordered_node_names: Vec<String>,
+    ordered_nodes: Vec<String>,
     show_events_for_node: HashMap<String, bool>,
     show_node_windows: HashMap<String, bool>,
     show_msg_windows: HashMap<String, bool>,
@@ -85,7 +85,7 @@ impl State {
             paused: false,
             global_speed: DEFAULT_GLOBAL_SPEED,
             ui_data: UIData {
-                ordered_node_names: Vec::new(),
+                ordered_nodes: Vec::new(),
                 show_events_for_node: HashMap::new(),
                 show_node_windows: HashMap::new(),
                 show_msg_windows: HashMap::new(),
@@ -126,7 +126,7 @@ impl State {
         self.ui_data
             .show_events_for_node
             .insert(node.name.clone(), true);
-        self.ui_data.ordered_node_names.push(node.name.clone());
+        self.ui_data.ordered_nodes.push(node.name.clone());
         self.event_queue.push_back(EventQueueItem {
             time: time,
             event: StateEvent::AddNode(node.name.clone()),
@@ -175,7 +175,7 @@ impl State {
         &mut self,
         time: f64,
         id: String,
-        node_name: String,
+        node: String,
         data: String,
         is_sent: bool,
     ) {
@@ -192,7 +192,7 @@ impl State {
         let msg = StateLocalMessage {
             id: id.clone(),
             time: time,
-            node_name,
+            node,
             data,
             msg_type,
         };
@@ -204,17 +204,17 @@ impl State {
         });
     }
 
-    pub fn process_node_disconnected(&mut self, time: f64, node_name: String) {
+    pub fn process_node_disconnected(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::NodeDisconnected(node_name),
+            event: StateEvent::NodeDisconnected(node),
         });
     }
 
-    pub fn process_node_connected(&mut self, time: f64, node_name: String) {
+    pub fn process_node_connected(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::NodeConnected(node_name),
+            event: StateEvent::NodeConnected(node),
         });
     }
 
@@ -223,7 +223,7 @@ impl State {
         id: String,
         name: String,
         time_set: f64,
-        node_name: String,
+        node: String,
         delay: f64,
         time_removed: f64,
     ) {
@@ -231,7 +231,7 @@ impl State {
             id,
             name,
             time_set,
-            node_name,
+            node,
             delay,
             time_removed,
             k: -1,
@@ -256,31 +256,31 @@ impl State {
         });
     }
 
-    pub fn process_drop_incoming(&mut self, time: f64, node_name: String) {
+    pub fn process_drop_incoming(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::DropIncoming(node_name),
+            event: StateEvent::DropIncoming(node),
         });
     }
 
-    pub fn process_pass_incoming(&mut self, time: f64, node_name: String) {
+    pub fn process_pass_incoming(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::PassIncoming(node_name),
+            event: StateEvent::PassIncoming(node),
         });
     }
 
-    pub fn process_drop_outgoing(&mut self, time: f64, node_name: String) {
+    pub fn process_drop_outgoing(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::DropOutgoing(node_name),
+            event: StateEvent::DropOutgoing(node),
         });
     }
 
-    pub fn process_pass_outgoing(&mut self, time: f64, node_name: String) {
+    pub fn process_pass_outgoing(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::PassOutgoing(node_name),
+            event: StateEvent::PassOutgoing(node),
         });
     }
 
@@ -309,11 +309,7 @@ impl State {
                 self.partition_nodes();
             } else {
                 let center = Vec2::from((screen_width() / 2., screen_height() / 2.));
-                self.make_node_circle(
-                    self.ui_data.ordered_node_names.clone(),
-                    center,
-                    CIRCLE_RADIUS,
-                );
+                self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
             }
             for (_, msg) in &mut self.travelling_messages {
                 let new_pos = msg.borrow().src.borrow().pos;
@@ -426,13 +422,13 @@ impl State {
         if is_mouse_button_down(MouseButton::Left) {
             let mouse_pos = mouse_position();
             if self.ui_data.selected_node.is_none() {
-                if let Some(node_name) = self.get_node_by_mouse_pos(mouse_pos) {
-                    self.ui_data.selected_node = Some(node_name);
+                if let Some(node) = self.get_node_by_mouse_pos(mouse_pos) {
+                    self.ui_data.selected_node = Some(node);
                     self.ui_data.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
                 }
             } else {
-                let node_name = self.ui_data.selected_node.clone().unwrap();
-                let node = self.nodes.get_mut(&node_name).unwrap();
+                let node = self.ui_data.selected_node.clone().unwrap();
+                let node = self.nodes.get_mut(&node).unwrap();
                 let drag_direction =
                     Vec2::new(mouse_pos.0, mouse_pos.1) - self.ui_data.selected_mouse_position;
                 if !drag_direction.is_nan() {
@@ -516,13 +512,9 @@ impl State {
             ui.collapsing("Show events (messages and timers) for a node:", |ui| {
                 ui.set_max_height(screen_height() * 0.2);
                 ScrollArea::vertical().show(ui, |ui| {
-                    for node_name in &self.ui_data.ordered_node_names {
-                        let show_events = self
-                            .ui_data
-                            .show_events_for_node
-                            .get_mut(node_name)
-                            .unwrap();
-                        let node_id = self.nodes.get(node_name).unwrap().borrow().id;
+                    for node in &self.ui_data.ordered_nodes {
+                        let show_events = self.ui_data.show_events_for_node.get_mut(node).unwrap();
+                        let node_id = self.nodes.get(node).unwrap().borrow().id;
                         ui.add(Checkbox::new(
                             show_events,
                             format!("Node {}", node_id.to_string()),
@@ -548,8 +540,8 @@ impl State {
     }
 
     pub fn draw_ui_node_windows(&mut self, egui_ctx: &Context) {
-        for (node_name, show_window) in &mut self.ui_data.show_node_windows {
-            let node = self.nodes.get(node_name).unwrap().borrow();
+        for (node, show_window) in &mut self.ui_data.show_node_windows {
+            let node = self.nodes.get(node).unwrap().borrow();
             egui::Window::new(format!("Node {}", node.id.to_string()))
                 .open(show_window)
                 .show(egui_ctx, |ui| {
@@ -687,8 +679,8 @@ impl State {
             return false;
         }
         match event {
-            StateEvent::AddNode(node_name) => {
-                self.nodes.get_mut(&node_name).unwrap().borrow_mut().show = true;
+            StateEvent::AddNode(node) => {
+                self.nodes.get_mut(&node).unwrap().borrow_mut().show = true;
             }
             StateEvent::SendMessage(msg_id) => {
                 self.travelling_messages.insert(
@@ -700,23 +692,15 @@ impl State {
                 msg.set_status(MessageStatus::OnTheWay);
                 msg.src.borrow_mut().messages_sent.push(msg.id.clone());
             }
-            StateEvent::NodeDisconnected(node_name) => {
-                self.nodes
-                    .get_mut(&node_name)
-                    .unwrap()
-                    .borrow_mut()
-                    .connected = false
+            StateEvent::NodeDisconnected(node) => {
+                self.nodes.get_mut(&node).unwrap().borrow_mut().connected = false
             }
-            StateEvent::NodeConnected(node_name) => {
-                self.nodes
-                    .get_mut(&node_name)
-                    .unwrap()
-                    .borrow_mut()
-                    .connected = true
+            StateEvent::NodeConnected(node) => {
+                self.nodes.get_mut(&node).unwrap().borrow_mut().connected = true
             }
             StateEvent::TimerSet(timer) => self
                 .nodes
-                .get_mut(&timer.node_name)
+                .get_mut(&timer.node)
                 .unwrap()
                 .borrow_mut()
                 .timers
@@ -724,7 +708,7 @@ impl State {
             StateEvent::SendLocalMessage(id) => {
                 let msg = self.local_messages.remove(&id).unwrap();
                 self.nodes
-                    .get_mut(&msg.node_name)
+                    .get_mut(&msg.node)
                     .unwrap()
                     .borrow_mut()
                     .local_messages_sent
@@ -733,7 +717,7 @@ impl State {
             StateEvent::ReceiveLocalMessage(id) => {
                 let msg = self.local_messages.remove(&id).unwrap();
                 self.nodes
-                    .get_mut(&msg.node_name)
+                    .get_mut(&msg.node)
                     .unwrap()
                     .borrow_mut()
                     .local_messages_received
@@ -745,17 +729,17 @@ impl State {
             StateEvent::LinkEnabled((from, to)) => {
                 self.disabled_links.remove(&(from, to));
             }
-            StateEvent::DropIncoming(node_name) => {
-                self.drop_incoming.insert(node_name);
+            StateEvent::DropIncoming(node) => {
+                self.drop_incoming.insert(node);
             }
-            StateEvent::PassIncoming(node_name) => {
-                self.drop_incoming.remove(&node_name);
+            StateEvent::PassIncoming(node) => {
+                self.drop_incoming.remove(&node);
             }
-            StateEvent::DropOutgoing(node_name) => {
-                self.drop_outgoing.insert(node_name);
+            StateEvent::DropOutgoing(node) => {
+                self.drop_outgoing.insert(node);
             }
-            StateEvent::PassOutgoing(node_name) => {
-                self.drop_outgoing.remove(&node_name);
+            StateEvent::PassOutgoing(node) => {
+                self.drop_outgoing.remove(&node);
             }
             StateEvent::MakePartition((group1, group2)) => {
                 for node1 in &group1 {
@@ -772,11 +756,7 @@ impl State {
                 self.drop_outgoing.clear();
                 self.disabled_links.clear();
                 let center = Vec2::new(screen_width() / 2., screen_height() / 2.);
-                self.make_node_circle(
-                    self.ui_data.ordered_node_names.clone(),
-                    center,
-                    CIRCLE_RADIUS,
-                );
+                self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
             }
         }
         true

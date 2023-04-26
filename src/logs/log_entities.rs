@@ -9,13 +9,13 @@ pub struct EventLog {
 pub enum Event {
     NodeAdded {
         time: f64,
-        node_name: String,
+        node: String,
         node_id: u32,
     },
     LocalMessageSent {
         time: f64,
         msg_id: String,
-        node_name: String,
+        node: String,
         proc: String,
         msg_tip: String,
         msg_data: String,
@@ -23,7 +23,7 @@ pub enum Event {
     LocalMessageReceived {
         time: f64,
         msg_id: String,
-        node_name: String,
+        node: String,
         proc: String,
         msg_tip: String,
         msg_data: String,
@@ -44,17 +44,17 @@ pub enum Event {
     },
     NodeConnected {
         time: f64,
-        node_name: String,
+        node: String,
     },
     NodeDisconnected {
         time: f64,
-        node_name: String,
+        node: String,
     },
     TimerSet {
         time: f64,
         timer_id: String,
         timer_name: String,
-        node_name: String,
+        node: String,
         proc: String,
         delay: f64,
     },
@@ -78,19 +78,19 @@ pub enum Event {
     },
     DropIncoming {
         time: f64,
-        node_name: String,
+        node: String,
     },
     PassIncoming {
         time: f64,
-        node_name: String,
+        node: String,
     },
     DropOutgoing {
         time: f64,
-        node_name: String,
+        node: String,
     },
     PassOutgoing {
         time: f64,
-        node_name: String,
+        node: String,
     },
     MakePartition {
         time: f64,

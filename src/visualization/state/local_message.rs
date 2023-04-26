@@ -2,7 +2,7 @@
 pub struct StateLocalMessage {
     pub id: String,
     pub time: f64,
-    pub node_name: String,
+    pub node: String,
     pub data: String,
     pub msg_type: LocalMessageType,
 }

@@ -60,7 +60,7 @@ impl EventController {
         for event in &events {
             if let Event::NodeAdded {
                 time: _,
-                node_name: _,
+                node: _,
                 node_id: _,
             } = event
             {
@@ -76,14 +76,14 @@ impl EventController {
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
             if let Event::NodeAdded {
                 time,
-                node_name,
+                node,
                 node_id,
             } = &events[i]
             {
                 self.commands.push((
                     *time,
                     ControllerStateCommand::AddNode(ControllerNode {
-                        name: node_name.clone(),
+                        name: node.clone(),
                         id: *node_id,
                         pos,
                     }),
@@ -95,7 +95,7 @@ impl EventController {
             match event {
                 Event::NodeAdded {
                     time,
-                    node_name,
+                    node,
                     node_id,
                 } => {
                     let x = gen_range(0.3, 0.8);
@@ -104,7 +104,7 @@ impl EventController {
                     self.commands.push((
                         time,
                         ControllerStateCommand::AddNode(ControllerNode {
-                            name: node_name,
+                            name: node,
                             id: node_id,
                             pos,
                         }),
@@ -113,14 +113,14 @@ impl EventController {
                 Event::LocalMessageSent {
                     time,
                     msg_id,
-                    node_name,
+                    node,
                     proc,
                     msg_tip,
                     msg_data,
                 } => {
                     let controller_msg = ControllerLocalMessage {
                         id: msg_id.clone(),
-                        node_name,
+                        node,
                         proc,
                         tip: msg_tip,
                         data: msg_data,
@@ -136,14 +136,14 @@ impl EventController {
                 Event::LocalMessageReceived {
                     time,
                     msg_id,
-                    node_name,
+                    node,
                     proc,
                     msg_tip,
                     msg_data,
                 } => {
                     let controller_msg = ControllerLocalMessage {
                         id: msg_id.clone(),
-                        node_name,
+                        node,
                         proc,
                         tip: msg_tip,
                         data: msg_data,
@@ -184,26 +184,26 @@ impl EventController {
                 Event::MessageReceived { time, msg_id } => {
                     self.messages.get_mut(&msg_id).unwrap().time_received = time;
                 }
-                Event::NodeDisconnected { time, node_name } => {
+                Event::NodeDisconnected { time, node } => {
                     self.commands
-                        .push((time, ControllerStateCommand::NodeDisconnected(node_name)));
+                        .push((time, ControllerStateCommand::NodeDisconnected(node)));
                 }
-                Event::NodeConnected { time, node_name } => {
+                Event::NodeConnected { time, node } => {
                     self.commands
-                        .push((time, ControllerStateCommand::NodeConnected(node_name)));
+                        .push((time, ControllerStateCommand::NodeConnected(node)));
                 }
                 Event::TimerSet {
                     time,
                     timer_id,
                     timer_name,
-                    node_name,
+                    node,
                     proc,
                     delay,
                 } => {
                     let timer = ControllerTimer {
                         id: timer_id.clone(),
                         name: timer_name,
-                        node_name,
+                        node,
                         proc,
                         delay,
                         time_set: time,
@@ -227,21 +227,21 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::EnableLink((from, to))));
                 }
-                Event::DropIncoming { time, node_name } => {
+                Event::DropIncoming { time, node } => {
                     self.commands
-                        .push((time, ControllerStateCommand::DropIncoming(node_name)));
+                        .push((time, ControllerStateCommand::DropIncoming(node)));
                 }
-                Event::PassIncoming { time, node_name } => {
+                Event::PassIncoming { time, node } => {
                     self.commands
-                        .push((time, ControllerStateCommand::PassIncoming(node_name)));
+                        .push((time, ControllerStateCommand::PassIncoming(node)));
                 }
-                Event::DropOutgoing { time, node_name } => {
+                Event::DropOutgoing { time, node } => {
                     self.commands
-                        .push((time, ControllerStateCommand::DropOutgoing(node_name)));
+                        .push((time, ControllerStateCommand::DropOutgoing(node)));
                 }
-                Event::PassOutgoing { time, node_name } => {
+                Event::PassOutgoing { time, node } => {
                     self.commands
-                        .push((time, ControllerStateCommand::PassOutgoing(node_name)));
+                        .push((time, ControllerStateCommand::PassOutgoing(node)));
                 }
                 Event::MakePartition {
                     time,
@@ -290,16 +290,16 @@ impl EventController {
                     state.process_local_message(
                         msg.time,
                         msg.id.clone(),
-                        msg.node_name.clone(),
+                        msg.node.clone(),
                         msg.data.clone(),
                         is_sent,
                     );
                 }
-                ControllerStateCommand::NodeDisconnected(node_name) => {
-                    state.process_node_disconnected(command.0, node_name.clone())
+                ControllerStateCommand::NodeDisconnected(node) => {
+                    state.process_node_disconnected(command.0, node.clone())
                 }
-                ControllerStateCommand::NodeConnected(node_name) => {
-                    state.process_node_connected(command.0, node_name.clone())
+                ControllerStateCommand::NodeConnected(node) => {
+                    state.process_node_connected(command.0, node.clone())
                 }
                 ControllerStateCommand::TimerSet(id) => {
                     let timer = self.timers.get(id).unwrap();
@@ -307,7 +307,7 @@ impl EventController {
                         timer.id.clone(),
                         timer.name.clone(),
                         timer.time_set,
-                        timer.node_name.clone(),
+                        timer.node.clone(),
                         timer.delay,
                         timer.time_removed,
                     );
@@ -318,17 +318,17 @@ impl EventController {
                 ControllerStateCommand::EnableLink(link) => {
                     state.process_link_enabled(command.0, link.0.clone(), link.1.clone());
                 }
-                ControllerStateCommand::DropIncoming(node_name) => {
-                    state.process_drop_incoming(command.0, node_name.clone());
+                ControllerStateCommand::DropIncoming(node) => {
+                    state.process_drop_incoming(command.0, node.clone());
                 }
-                ControllerStateCommand::PassIncoming(node_name) => {
-                    state.process_pass_incoming(command.0, node_name.clone());
+                ControllerStateCommand::PassIncoming(node) => {
+                    state.process_pass_incoming(command.0, node.clone());
                 }
-                ControllerStateCommand::DropOutgoing(node_name) => {
-                    state.process_drop_outgoing(command.0, node_name.clone());
+                ControllerStateCommand::DropOutgoing(node) => {
+                    state.process_drop_outgoing(command.0, node.clone());
                 }
-                ControllerStateCommand::PassOutgoing(node_name) => {
-                    state.process_pass_outgoing(command.0, node_name.clone());
+                ControllerStateCommand::PassOutgoing(node) => {
+                    state.process_pass_outgoing(command.0, node.clone());
                 }
                 ControllerStateCommand::MakePartition((group1, group2)) => {
                     state.process_make_partition(command.0, group1.clone(), group2.clone());
@@ -348,7 +348,7 @@ pub enum LocalMessageType {
 
 pub struct ControllerLocalMessage {
     id: String,
-    node_name: String,
+    node: String,
     proc: String,
     tip: String,
     data: String,
@@ -371,7 +371,7 @@ pub struct ControllerMessage {
 pub struct ControllerTimer {
     id: String,
     name: String,
-    node_name: String,
+    node: String,
     proc: String,
     time_set: f64,
     delay: f64,
