@@ -12,6 +12,11 @@ pub enum Event {
         node: String,
         node_id: u32,
     },
+    ProcessAdded {
+        time: f64,
+        node: String,
+        proc: String,
+    },
     LocalMessageSent {
         time: f64,
         msg_id: String,
@@ -51,6 +56,14 @@ pub enum Event {
         node: String,
     },
     NodeDisconnected {
+        time: f64,
+        node: String,
+    },
+    NodeCrashed {
+        time: f64,
+        node: String,
+    },
+    NodeRecovered {
         time: f64,
         node: String,
     },

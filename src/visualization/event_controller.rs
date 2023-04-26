@@ -110,6 +110,7 @@ impl EventController {
                         }),
                     ));
                 }
+                Event::ProcessAdded { .. } => {}
                 Event::LocalMessageSent {
                     time,
                     msg_id,
@@ -193,6 +194,8 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::NodeConnected(node)));
                 }
+                Event::NodeCrashed { .. } => {}
+                Event::NodeRecovered { .. } => {}
                 Event::TimerSet {
                     time,
                     timer_id,
