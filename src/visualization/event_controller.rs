@@ -45,20 +45,20 @@ impl EventController {
     }
 
     pub fn parse_log(&mut self, filename: &str) {
-        let mut events: Vec<Event> = Vec::new();
+        let mut events: Vec<LogEntry> = Vec::new();
 
         let file = File::open(filename).unwrap();
         let reader = BufReader::new(file);
 
         for line in reader.lines() {
-            let event: Event = serde_json::from_str(&line.unwrap()).unwrap();
+            let event: LogEntry = serde_json::from_str(&line.unwrap()).unwrap();
             events.push(event);
         }
 
         let mut node_cnt = 0;
 
         for event in &events {
-            if let Event::NodeAdded {
+            if let LogEntry::NodeAdded {
                 time: _,
                 node: _,
                 node_id: _,
@@ -74,7 +74,7 @@ impl EventController {
         for i in 0..node_cnt {
             let angle = (2.0 * PI / (node_cnt as f32)) * (i as f32);
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
-            if let Event::NodeAdded {
+            if let LogEntry::NodeAdded {
                 time,
                 node,
                 node_id,
@@ -93,7 +93,7 @@ impl EventController {
 
         for event in events.split_off(node_cnt) {
             match event {
-                Event::NodeAdded {
+                LogEntry::NodeAdded {
                     time,
                     node,
                     node_id,
@@ -110,8 +110,8 @@ impl EventController {
                         }),
                     ));
                 }
-                Event::ProcessAdded { .. } => {}
-                Event::LocalMessageSent {
+                LogEntry::ProcessAdded { .. } => {}
+                LogEntry::LocalMessageSent {
                     time,
                     msg_id,
                     node,
@@ -134,7 +134,7 @@ impl EventController {
                         ControllerStateCommand::ProcessLocalMessage(msg_id.clone()),
                     ));
                 }
-                Event::LocalMessageReceived {
+                LogEntry::LocalMessageReceived {
                     time,
                     msg_id,
                     node,
@@ -157,7 +157,7 @@ impl EventController {
                         ControllerStateCommand::ProcessLocalMessage(msg_id.clone()),
                     ));
                 }
-                Event::MessageSent {
+                LogEntry::MessageSent {
                     time,
                     msg_id,
                     src_node,
@@ -183,23 +183,23 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::SendMessage(msg_id)));
                 }
-                Event::MessageReceived { time, msg_id } => {
+                LogEntry::MessageReceived { time, msg_id } => {
                     let msg = self.messages.get_mut(&msg_id).unwrap();
                     msg.time_received = time;
                     msg.copies_received += 1;
                 }
-                Event::MessageDropped { .. } => {}
-                Event::NodeDisconnected { time, node } => {
+                LogEntry::MessageDropped { .. } => {}
+                LogEntry::NodeDisconnected { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::NodeDisconnected(node)));
                 }
-                Event::NodeConnected { time, node } => {
+                LogEntry::NodeConnected { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::NodeConnected(node)));
                 }
-                Event::NodeCrashed { .. } => {}
-                Event::NodeRecovered { .. } => {}
-                Event::TimerSet {
+                LogEntry::NodeCrashed { .. } => {}
+                LogEntry::NodeRecovered { .. } => {}
+                LogEntry::TimerSet {
                     time,
                     timer_id,
                     timer_name,
@@ -220,37 +220,53 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::TimerSet(timer_id)));
                 }
-                Event::TimerFired { time, timer_id } => {
+                LogEntry::TimerFired { time, timer_id } => {
                     self.timers.get_mut(&timer_id).unwrap().time_removed = time;
                 }
-                Event::TimerCancelled { time, timer_id } => {
+                LogEntry::TimerCancelled { time, timer_id } => {
                     self.timers.get_mut(&timer_id).unwrap().time_removed = time;
                 }
-                Event::LinkDisabled { time, from, to } => {
-                    self.commands
-                        .push((time, ControllerStateCommand::DisableLink((from, to))));
+                LogEntry::LinkDisabled {
+                    time,
+                    from_node,
+                    from_proc: _,
+                    to_node,
+                    to_proc: _,
+                } => {
+                    self.commands.push((
+                        time,
+                        ControllerStateCommand::DisableLink((from_node, to_node)),
+                    ));
                 }
-                Event::LinkEnabled { time, from, to } => {
-                    self.commands
-                        .push((time, ControllerStateCommand::EnableLink((from, to))));
+                LogEntry::LinkEnabled {
+                    time,
+                    from_node,
+                    from_proc: _,
+                    to_node,
+                    to_proc: _,
+                } => {
+                    self.commands.push((
+                        time,
+                        ControllerStateCommand::EnableLink((from_node, to_node)),
+                    ));
                 }
-                Event::DropIncoming { time, node } => {
+                LogEntry::DropIncoming { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::DropIncoming(node)));
                 }
-                Event::PassIncoming { time, node } => {
+                LogEntry::PassIncoming { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::PassIncoming(node)));
                 }
-                Event::DropOutgoing { time, node } => {
+                LogEntry::DropOutgoing { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::DropOutgoing(node)));
                 }
-                Event::PassOutgoing { time, node } => {
+                LogEntry::PassOutgoing { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::PassOutgoing(node)));
                 }
-                Event::MakePartition {
+                LogEntry::MakePartition {
                     time,
                     group1,
                     group2,
@@ -260,7 +276,7 @@ impl EventController {
                         ControllerStateCommand::MakePartition((group1, group2)),
                     ));
                 }
-                Event::ResetNetwork { time } => {
+                LogEntry::ResetNetwork { time } => {
                     self.commands
                         .push((time, ControllerStateCommand::ResetNetwork()));
                 }

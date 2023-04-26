@@ -1,12 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-pub struct EventLog {
-    pub events: Vec<Event>,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
-pub enum Event {
+pub enum LogEntry {
     NodeAdded {
         time: f64,
         node: String,
@@ -85,13 +80,17 @@ pub enum Event {
     },
     LinkDisabled {
         time: f64,
-        from: String,
-        to: String,
+        from_node: String,
+        from_proc: String,
+        to_node: String,
+        to_proc: String,
     },
     LinkEnabled {
         time: f64,
-        from: String,
-        to: String,
+        from_node: String,
+        from_proc: String,
+        to_node: String,
+        to_proc: String,
     },
     DropIncoming {
         time: f64,
