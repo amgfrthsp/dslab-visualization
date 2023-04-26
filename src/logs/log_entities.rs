@@ -42,6 +42,10 @@ pub enum Event {
         time: f64,
         msg_id: String,
     },
+    MessageDropped {
+        time: f64,
+        msg_id: String,
+    },
     NodeConnected {
         time: f64,
         node: String,

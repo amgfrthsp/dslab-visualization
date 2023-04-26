@@ -184,6 +184,7 @@ impl EventController {
                 Event::MessageReceived { time, msg_id } => {
                     self.messages.get_mut(&msg_id).unwrap().time_received = time;
                 }
+                Event::MessageDropped { .. } => {}
                 Event::NodeDisconnected { time, node } => {
                     self.commands
                         .push((time, ControllerStateCommand::NodeDisconnected(node)));
