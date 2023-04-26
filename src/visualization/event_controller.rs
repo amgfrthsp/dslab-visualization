@@ -268,12 +268,14 @@ impl EventController {
                 }
                 LogEntry::MakePartition {
                     time,
-                    group1,
-                    group2,
+                    group1_nodes,
+                    group1_procs: _,
+                    group2_nodes,
+                    group2_procs: _,
                 } => {
                     self.commands.push((
                         time,
-                        ControllerStateCommand::MakePartition((group1, group2)),
+                        ControllerStateCommand::MakePartition((group1_nodes, group2_nodes)),
                     ));
                 }
                 LogEntry::ResetNetwork { time } => {
