@@ -177,13 +177,16 @@ impl EventController {
                         data: msg_data,
                         time_sent: time,
                         time_received: -1.0,
+                        copies_received: 0,
                     };
                     self.messages.insert(msg.id.clone(), msg);
                     self.commands
                         .push((time, ControllerStateCommand::SendMessage(msg_id)));
                 }
                 Event::MessageReceived { time, msg_id } => {
-                    self.messages.get_mut(&msg_id).unwrap().time_received = time;
+                    let msg = self.messages.get_mut(&msg_id).unwrap();
+                    msg.time_received = time;
+                    msg.copies_received += 1;
                 }
                 Event::MessageDropped { .. } => {}
                 Event::NodeDisconnected { time, node } => {
@@ -282,6 +285,7 @@ impl EventController {
                         msg.tip.clone(),
                         msg.data.clone(),
                         (msg.time_received - msg.time_sent) as f32,
+                        msg.copies_received,
                     );
                 }
                 ControllerStateCommand::ProcessLocalMessage(id) => {
@@ -370,6 +374,7 @@ pub struct ControllerMessage {
     data: String,
     time_sent: f64,
     time_received: f64,
+    copies_received: u64,
 }
 
 pub struct ControllerTimer {

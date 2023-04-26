@@ -144,6 +144,7 @@ impl State {
         tip: String,
         data: String,
         duration: f32,
+        copies_received: u64,
     ) {
         if self.global_speed == DEFAULT_GLOBAL_SPEED && duration > 0. {
             self.global_speed = duration / 10.;
@@ -160,7 +161,7 @@ impl State {
             status: MessageStatus::Queued,
             time_sent: time as f32,
             time_delivered: time as f32 + duration,
-            drop: duration <= 0.0,
+            copies_received,
             last_color_change: 0.,
             drop_color: WHITE,
         };
@@ -341,18 +342,20 @@ impl State {
             let mut mut_msg = msg.borrow_mut();
             mut_msg.update(self.global_speed, self.current_time as f32);
             mut_msg.update_status();
-            if mut_msg.is_delivered() && !mut_msg.drop {
-                mut_msg
-                    .dest
-                    .borrow_mut()
-                    .messages_received
-                    .push(mut_msg.id.clone());
+            if mut_msg.is_delivered() && !mut_msg.is_dropped() {
+                for _ in 0..mut_msg.copies_received {
+                    mut_msg
+                        .dest
+                        .borrow_mut()
+                        .messages_received
+                        .push(mut_msg.id.clone());
+                }
             }
         }
         self.travelling_messages.retain(|_, msg| {
             let msg_borrow = msg.borrow();
             if !msg_borrow.is_delivered()
-                && (msg_borrow.drop || self.current_time < msg_borrow.time_delivered.into())
+                && (msg_borrow.is_dropped() || self.current_time < msg_borrow.time_delivered.into())
             {
                 return true;
             }
@@ -635,6 +638,9 @@ impl State {
                 .show(egui_ctx, |ui| {
                     ui.label(format!("From: {}", msg.src.borrow().id.to_string()));
                     ui.label(format!("To: {}", msg.dest.borrow().id.to_string()));
+                    if msg.is_duplicated() {
+                        ui.label(format!("Duplicated {} times", msg.copies_received));
+                    }
                     ui.label(format!("Type: {}", msg.tip));
                     ui.label(format!("Data: {}", msg.data.clone()));
                 });

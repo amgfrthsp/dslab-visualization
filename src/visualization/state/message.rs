@@ -16,7 +16,7 @@ pub struct StateMessage {
     pub status: MessageStatus,
     pub time_sent: f32,
     pub time_delivered: f32,
-    pub drop: bool,
+    pub copies_received: u64,
     pub last_color_change: f64,
     pub drop_color: Color,
 }
@@ -29,7 +29,7 @@ impl StateMessage {
     pub fn get_own_speed(&self, current_time: f32) -> f32 {
         let direction = self.get_direction();
         let travel_time_left = self.time_delivered - current_time;
-        let mut own_speed = if !self.drop {
+        let mut own_speed = if !self.is_dropped() {
             1.0 / (FPS * travel_time_left / direction.length())
         } else {
             1.0 / (FPS * 3.0 / direction.length())
@@ -55,7 +55,7 @@ impl StateMessage {
 
     pub fn draw(&mut self) {
         let time = get_time();
-        if self.drop && time - self.last_color_change >= 0.3 {
+        if self.is_dropped() && time - self.last_color_change >= 0.3 {
             self.drop_color = if self.drop_color == BLACK {
                 self.src.borrow().color
             } else {
@@ -63,16 +63,44 @@ impl StateMessage {
             };
             self.last_color_change = time;
         }
-        let color = if self.drop {
+        let color = if self.is_dropped() {
             self.drop_color
         } else {
             self.src.borrow().color
         };
         draw_circle(self.pos.x, self.pos.y, MESSAGE_RADIUS, color);
+        if self.is_duplicated() {
+            let font_size = (MESSAGE_RADIUS * 2.0).floor() as u16;
+            let text = self.copies_received.to_string();
+            let text_size = measure_text(&text, None, font_size, 1.0);
+            let text_position = Vec2::new(
+                self.pos.x - text_size.width / 2.0,
+                self.pos.y + text_size.height / 2.0,
+            );
+
+            draw_text_ex(
+                &text,
+                text_position.x,
+                text_position.y,
+                TextParams {
+                    font_size,
+                    color: BLACK,
+                    ..Default::default()
+                },
+            );
+        }
+    }
+
+    pub fn is_dropped(&self) -> bool {
+        self.copies_received == 0
+    }
+
+    pub fn is_duplicated(&self) -> bool {
+        self.copies_received > 1
     }
 
     pub fn is_delivered(&self) -> bool {
-        if !self.drop {
+        if !self.is_dropped() {
             calc_dist(self.pos, self.dest.borrow().pos) < 5.0
         } else {
             let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
@@ -86,7 +114,7 @@ impl StateMessage {
 
     pub fn update_status(&mut self) {
         if self.is_delivered() {
-            self.status = if self.drop && !(self.src.borrow().id == self.dest.borrow().id) {
+            self.status = if self.is_dropped() && !(self.src.borrow().id == self.dest.borrow().id) {
                 MessageStatus::Dropped
             } else {
                 MessageStatus::Delivered
