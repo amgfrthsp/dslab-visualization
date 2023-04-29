@@ -17,10 +17,10 @@ use super::timer::*;
 
 #[derive(Clone, Debug)]
 pub enum StateEvent {
-    StartNode(String),
-    SendMessage(String),
-    SendLocalMessage(String),
-    ReceiveLocalMessage(String),
+    NodeStarted(String),
+    MessageSent(String),
+    LocalMessageSent(String),
+    LocalMessageReceived(String),
     NodeConnected(String),
     NodeDisconnected(String),
     TimerSet(StateTimer),
@@ -107,7 +107,7 @@ impl State {
         }
     }
 
-    pub fn start_node(&mut self, time: f64, name: String, id: u32, pos: Vec2) {
+    pub fn process_node_started(&mut self, time: f64, name: String, id: u32, pos: Vec2) {
         let color = self.node_colors.pop_front().unwrap_or(DEFAULT_NODE_COLOR);
         let node = StateNode {
             name,
@@ -129,13 +129,13 @@ impl State {
         self.ui_data.ordered_nodes.push(node.name.clone());
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::StartNode(node.name.clone()),
+            event: StateEvent::NodeStarted(node.name.clone()),
         });
         self.nodes
             .insert(node.name.clone(), Rc::new(RefCell::new(node)));
     }
 
-    pub fn send_message(
+    pub fn process_message_sent(
         &mut self,
         id: String,
         time: f64,
@@ -168,7 +168,7 @@ impl State {
         self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::SendMessage(id),
+            event: StateEvent::MessageSent(id),
         });
     }
 
@@ -185,10 +185,10 @@ impl State {
 
         if is_sent {
             msg_type = LocalMessageType::Sent;
-            event = StateEvent::SendLocalMessage(id.clone());
+            event = StateEvent::LocalMessageSent(id.clone());
         } else {
             msg_type = LocalMessageType::Received;
-            event = StateEvent::ReceiveLocalMessage(id.clone());
+            event = StateEvent::LocalMessageReceived(id.clone());
         }
         let msg = StateLocalMessage {
             id: id.clone(),
@@ -690,10 +690,10 @@ impl State {
             return false;
         }
         match event {
-            StateEvent::StartNode(node) => {
+            StateEvent::NodeStarted(node) => {
                 self.nodes.get_mut(&node).unwrap().borrow_mut().show = true;
             }
-            StateEvent::SendMessage(msg_id) => {
+            StateEvent::MessageSent(msg_id) => {
                 self.travelling_messages.insert(
                     msg_id.clone(),
                     Rc::clone(self.messages.get(&msg_id).unwrap()),
@@ -716,7 +716,7 @@ impl State {
                 .borrow_mut()
                 .timers
                 .push_back(timer),
-            StateEvent::SendLocalMessage(id) => {
+            StateEvent::LocalMessageSent(id) => {
                 let msg = self.local_messages.remove(&id).unwrap();
                 self.nodes
                     .get_mut(&msg.node)
@@ -725,7 +725,7 @@ impl State {
                     .local_messages_sent
                     .push(msg);
             }
-            StateEvent::ReceiveLocalMessage(id) => {
+            StateEvent::LocalMessageReceived(id) => {
                 let msg = self.local_messages.remove(&id).unwrap();
                 self.nodes
                     .get_mut(&msg.node)

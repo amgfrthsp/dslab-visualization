@@ -11,20 +11,20 @@ use super::utilities::CIRCLE_RADIUS;
 
 #[derive(Debug)]
 pub enum ControllerStateCommand {
-    SendMessage(String),
-    ProcessLocalMessage(String),
+    MessageSent(String),
+    LocalMessageEmerged(String),
     NodeConnected(String),
     NodeDisconnected(String),
-    StartNode(ControllerNode),
+    NodeStarted(ControllerNode),
     TimerSet(String),
-    DisableLink((String, String)),
-    EnableLink((String, String)),
+    LinkDisabled((String, String)),
+    LinkEnabled((String, String)),
     DropIncoming(String),
     PassIncoming(String),
     DropOutgoing(String),
     PassOutgoing(String),
-    MakePartition((Vec<String>, Vec<String>)),
-    ResetNetwork(),
+    NetworkPartition((Vec<String>, Vec<String>)),
+    NetworkReset(),
 }
 
 pub struct EventController {
@@ -82,7 +82,7 @@ impl EventController {
             {
                 self.commands.push((
                     *time,
-                    ControllerStateCommand::StartNode(ControllerNode {
+                    ControllerStateCommand::NodeStarted(ControllerNode {
                         name: node.clone(),
                         id: *node_id,
                         pos,
@@ -103,7 +103,7 @@ impl EventController {
                     let pos = Vec2::from((x * screen_height(), y * screen_width()));
                     self.commands.push((
                         time,
-                        ControllerStateCommand::StartNode(ControllerNode {
+                        ControllerStateCommand::NodeStarted(ControllerNode {
                             name: node,
                             id: node_id,
                             pos,
@@ -130,7 +130,7 @@ impl EventController {
                     self.local_messages.insert(msg_id.clone(), controller_msg);
                     self.commands.push((
                         time,
-                        ControllerStateCommand::ProcessLocalMessage(msg_id.clone()),
+                        ControllerStateCommand::LocalMessageEmerged(msg_id.clone()),
                     ));
                 }
                 LogEntry::LocalMessageReceived {
@@ -152,7 +152,7 @@ impl EventController {
                     self.local_messages.insert(msg_id.clone(), controller_msg);
                     self.commands.push((
                         time,
-                        ControllerStateCommand::ProcessLocalMessage(msg_id.clone()),
+                        ControllerStateCommand::LocalMessageEmerged(msg_id.clone()),
                     ));
                 }
                 LogEntry::MessageSent {
@@ -178,7 +178,7 @@ impl EventController {
                     };
                     self.messages.insert(cont_msg.id.clone(), cont_msg);
                     self.commands
-                        .push((time, ControllerStateCommand::SendMessage(msg_id)));
+                        .push((time, ControllerStateCommand::MessageSent(msg_id)));
                 }
                 LogEntry::MessageReceived { time, msg_id } => {
                     let msg = self.messages.get_mut(&msg_id).unwrap();
@@ -232,7 +232,7 @@ impl EventController {
                 } => {
                     self.commands.push((
                         time,
-                        ControllerStateCommand::DisableLink((from_node, to_node)),
+                        ControllerStateCommand::LinkDisabled((from_node, to_node)),
                     ));
                 }
                 LogEntry::LinkEnabled {
@@ -244,7 +244,7 @@ impl EventController {
                 } => {
                     self.commands.push((
                         time,
-                        ControllerStateCommand::EnableLink((from_node, to_node)),
+                        ControllerStateCommand::LinkEnabled((from_node, to_node)),
                     ));
                 }
                 LogEntry::DropIncoming { time, node } => {
@@ -272,12 +272,12 @@ impl EventController {
                 } => {
                     self.commands.push((
                         time,
-                        ControllerStateCommand::MakePartition((group1_nodes, group2_nodes)),
+                        ControllerStateCommand::NetworkPartition((group1_nodes, group2_nodes)),
                     ));
                 }
                 LogEntry::NetworkReset { time } => {
                     self.commands
-                        .push((time, ControllerStateCommand::ResetNetwork()));
+                        .push((time, ControllerStateCommand::NetworkReset()));
                 }
             }
         }
@@ -287,12 +287,12 @@ impl EventController {
         self.commands.sort_by(|a, b| a.0.total_cmp(&b.0));
         for command in &self.commands {
             match &command.1 {
-                ControllerStateCommand::StartNode(node) => {
-                    state.start_node(command.0, node.name.clone(), node.id, node.pos);
+                ControllerStateCommand::NodeStarted(node) => {
+                    state.process_node_started(command.0, node.name.clone(), node.id, node.pos);
                 }
-                ControllerStateCommand::SendMessage(id) => {
+                ControllerStateCommand::MessageSent(id) => {
                     let msg = self.messages.get(id).unwrap();
-                    state.send_message(
+                    state.process_message_sent(
                         msg.id.clone(),
                         msg.time_sent,
                         &msg.src_node,
@@ -303,7 +303,7 @@ impl EventController {
                         msg.copies_received,
                     );
                 }
-                ControllerStateCommand::ProcessLocalMessage(id) => {
+                ControllerStateCommand::LocalMessageEmerged(id) => {
                     let msg = self.local_messages.get(id).unwrap();
                     let is_sent: bool;
                     match msg.msg_type {
@@ -335,10 +335,10 @@ impl EventController {
                         timer.time_removed,
                     );
                 }
-                ControllerStateCommand::DisableLink(link) => {
+                ControllerStateCommand::LinkDisabled(link) => {
                     state.process_link_disabled(command.0, link.0.clone(), link.1.clone());
                 }
-                ControllerStateCommand::EnableLink(link) => {
+                ControllerStateCommand::LinkEnabled(link) => {
                     state.process_link_enabled(command.0, link.0.clone(), link.1.clone());
                 }
                 ControllerStateCommand::DropIncoming(node) => {
@@ -353,10 +353,10 @@ impl EventController {
                 ControllerStateCommand::PassOutgoing(node) => {
                     state.process_pass_outgoing(command.0, node.clone());
                 }
-                ControllerStateCommand::MakePartition((group1, group2)) => {
+                ControllerStateCommand::NetworkPartition((group1, group2)) => {
                     state.process_network_partition(command.0, group1.clone(), group2.clone());
                 }
-                ControllerStateCommand::ResetNetwork() => {
+                ControllerStateCommand::NetworkReset() => {
                     state.process_network_reset(command.0);
                 }
             }
