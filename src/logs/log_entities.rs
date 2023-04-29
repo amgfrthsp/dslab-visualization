@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum LogEntry {
-    NodeAdded {
+    NodeStarted {
         time: f64,
         node: String,
         node_id: u32,
     },
-    ProcessAdded {
+    ProcessStarted {
         time: f64,
         node: String,
         proc: String,

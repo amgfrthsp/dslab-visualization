@@ -17,7 +17,7 @@ use super::timer::*;
 
 #[derive(Clone, Debug)]
 pub enum StateEvent {
-    AddNode(String),
+    StartNode(String),
     SendMessage(String),
     SendLocalMessage(String),
     ReceiveLocalMessage(String),
@@ -107,7 +107,7 @@ impl State {
         }
     }
 
-    pub fn add_node(&mut self, time: f64, name: String, id: u32, pos: Vec2) {
+    pub fn start_node(&mut self, time: f64, name: String, id: u32, pos: Vec2) {
         let color = self.node_colors.pop_front().unwrap_or(DEFAULT_NODE_COLOR);
         let node = StateNode {
             name,
@@ -129,7 +129,7 @@ impl State {
         self.ui_data.ordered_nodes.push(node.name.clone());
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::AddNode(node.name.clone()),
+            event: StateEvent::StartNode(node.name.clone()),
         });
         self.nodes
             .insert(node.name.clone(), Rc::new(RefCell::new(node)));
@@ -685,7 +685,7 @@ impl State {
             return false;
         }
         match event {
-            StateEvent::AddNode(node) => {
+            StateEvent::StartNode(node) => {
                 self.nodes.get_mut(&node).unwrap().borrow_mut().show = true;
             }
             StateEvent::SendMessage(msg_id) => {

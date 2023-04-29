@@ -15,7 +15,7 @@ pub enum ControllerStateCommand {
     ProcessLocalMessage(String),
     NodeConnected(String),
     NodeDisconnected(String),
-    AddNode(ControllerNode),
+    StartNode(ControllerNode),
     TimerSet(String),
     DisableLink((String, String)),
     EnableLink((String, String)),
@@ -58,7 +58,7 @@ impl EventController {
         let mut node_cnt = 0;
 
         for event in &events {
-            if let LogEntry::NodeAdded {
+            if let LogEntry::NodeStarted {
                 time: _,
                 node: _,
                 node_id: _,
@@ -74,7 +74,7 @@ impl EventController {
         for i in 0..node_cnt {
             let angle = (2.0 * PI / (node_cnt as f32)) * (i as f32);
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
-            if let LogEntry::NodeAdded {
+            if let LogEntry::NodeStarted {
                 time,
                 node,
                 node_id,
@@ -82,7 +82,7 @@ impl EventController {
             {
                 self.commands.push((
                     *time,
-                    ControllerStateCommand::AddNode(ControllerNode {
+                    ControllerStateCommand::StartNode(ControllerNode {
                         name: node.clone(),
                         id: *node_id,
                         pos,
@@ -93,7 +93,7 @@ impl EventController {
 
         for event in events.split_off(node_cnt) {
             match event {
-                LogEntry::NodeAdded {
+                LogEntry::NodeStarted {
                     time,
                     node,
                     node_id,
@@ -103,14 +103,14 @@ impl EventController {
                     let pos = Vec2::from((x * screen_height(), y * screen_width()));
                     self.commands.push((
                         time,
-                        ControllerStateCommand::AddNode(ControllerNode {
+                        ControllerStateCommand::StartNode(ControllerNode {
                             name: node,
                             id: node_id,
                             pos,
                         }),
                     ));
                 }
-                LogEntry::ProcessAdded { .. } => {}
+                LogEntry::ProcessStarted { .. } => {}
                 LogEntry::LocalMessageSent {
                     time,
                     msg_id,
@@ -290,8 +290,8 @@ impl EventController {
         self.commands.sort_by(|a, b| a.0.total_cmp(&b.0));
         for command in &self.commands {
             match &command.1 {
-                ControllerStateCommand::AddNode(node) => {
-                    state.add_node(command.0, node.name.clone(), node.id, node.pos);
+                ControllerStateCommand::StartNode(node) => {
+                    state.start_node(command.0, node.name.clone(), node.id, node.pos);
                 }
                 ControllerStateCommand::SendMessage(id) => {
                     let msg = self.messages.get(id).unwrap();
