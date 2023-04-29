@@ -50,7 +50,7 @@ impl StateNode {
                 break;
             }
         }
-        return hovered_timer;
+        hovered_timer
     }
 
     pub fn draw(&self, show_events: bool, current_time: f64, show_timers: bool) {

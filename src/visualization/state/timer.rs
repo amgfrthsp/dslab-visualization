@@ -18,12 +18,12 @@ pub struct StateTimer {
 impl StateTimer {
     pub fn get_position(&self, node_pos: Vec2) -> Vec2 {
         let angle = (2.0 * PI / (TIMERS_MAX_NUMBER as f32)) * (self.k as f32);
-        return node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.);
+        node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.)
     }
 
     pub fn check_hovered(&self, node_pos: Vec2) -> bool {
         let mouse_pos = Vec2::from(mouse_position());
-        return calc_dist(self.get_position(node_pos), mouse_pos) <= TIMER_RADIUS;
+        calc_dist(self.get_position(node_pos), mouse_pos) <= TIMER_RADIUS
     }
 
     pub fn draw(&self, node_pos: Vec2, current_time: f64) {

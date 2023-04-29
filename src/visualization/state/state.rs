@@ -128,7 +128,7 @@ impl State {
             .insert(node.name.clone(), true);
         self.ui_data.ordered_nodes.push(node.name.clone());
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::NodeStarted(node.name.clone()),
         });
         self.nodes
@@ -167,7 +167,7 @@ impl State {
         };
         self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::MessageSent(id),
         });
     }
@@ -192,7 +192,7 @@ impl State {
         }
         let msg = StateLocalMessage {
             id: id.clone(),
-            time: time,
+            time,
             node,
             data,
             msg_type,
@@ -200,21 +200,21 @@ impl State {
         self.local_messages.insert(id, msg);
 
         self.event_queue.push_back(EventQueueItem {
-            time: time,
-            event: event,
+            time,
+            event,
         });
     }
 
     pub fn process_node_disconnected(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::NodeDisconnected(node),
         });
     }
 
     pub fn process_node_connected(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::NodeConnected(node),
         });
     }
@@ -245,42 +245,42 @@ impl State {
 
     pub fn process_link_disabled(&mut self, time: f64, from: String, to: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::LinkDisabled((from, to)),
         });
     }
 
     pub fn process_link_enabled(&mut self, time: f64, from: String, to: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::LinkEnabled((from, to)),
         });
     }
 
     pub fn process_drop_incoming(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::DropIncoming(node),
         });
     }
 
     pub fn process_pass_incoming(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::PassIncoming(node),
         });
     }
 
     pub fn process_drop_outgoing(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::DropOutgoing(node),
         });
     }
 
     pub fn process_pass_outgoing(&mut self, time: f64, node: String) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::PassOutgoing(node),
         });
     }
@@ -292,14 +292,14 @@ impl State {
         group2: Vec<String>,
     ) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::NetworkPartition((group1, group2)),
         });
     }
 
     pub fn process_network_reset(&mut self, time: f64) {
         self.event_queue.push_back(EventQueueItem {
-            time: time,
+            time,
             event: StateEvent::NetworkReset(),
         });
     }
@@ -479,7 +479,7 @@ impl State {
                 return Some(msg.borrow().id.clone());
             }
         }
-        return None;
+        None
     }
 
     pub fn get_node_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
@@ -488,7 +488,7 @@ impl State {
                 return Some(node.borrow().name.clone());
             }
         }
-        return None;
+        None
     }
 
     pub fn draw_ui(&mut self) {
@@ -525,7 +525,7 @@ impl State {
                         let node_id = self.nodes.get(node).unwrap().borrow().id;
                         ui.add(Checkbox::new(
                             show_events,
-                            format!("Node {}", node_id.to_string()),
+                            format!("Node {}", node_id),
                         ));
                     }
                 });
@@ -550,7 +550,7 @@ impl State {
     pub fn draw_ui_node_windows(&mut self, egui_ctx: &Context) {
         for (node, show_window) in &mut self.ui_data.show_node_windows {
             let node = self.nodes.get(node).unwrap().borrow();
-            egui::Window::new(format!("Node {}", node.id.to_string()))
+            egui::Window::new(format!("Node {}", node.id))
                 .open(show_window)
                 .show(egui_ctx, |ui| {
                     ui.label(format!(
@@ -641,8 +641,8 @@ impl State {
             egui::Window::new(format!("Message {}", msg_id))
                 .open(show_window)
                 .show(egui_ctx, |ui| {
-                    ui.label(format!("From: {}", msg.src.borrow().id.to_string()));
-                    ui.label(format!("To: {}", msg.dest.borrow().id.to_string()));
+                    ui.label(format!("From: {}", msg.src.borrow().id));
+                    ui.label(format!("To: {}", msg.dest.borrow().id));
                     if msg.is_duplicated() {
                         ui.label(format!("Duplicated {} times", msg.copies_received));
                     }
