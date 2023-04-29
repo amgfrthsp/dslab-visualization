@@ -30,8 +30,8 @@ pub enum StateEvent {
     PassIncoming(String),
     DropOutgoing(String),
     PassOutgoing(String),
-    MakePartition((Vec<String>, Vec<String>)),
-    ResetNetwork(),
+    NetworkPartition((Vec<String>, Vec<String>)),
+    NetworkReset(),
 }
 
 #[derive(Clone)]
@@ -285,17 +285,22 @@ impl State {
         });
     }
 
-    pub fn process_make_partition(&mut self, time: f64, group1: Vec<String>, group2: Vec<String>) {
+    pub fn process_network_partition(
+        &mut self,
+        time: f64,
+        group1: Vec<String>,
+        group2: Vec<String>,
+    ) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::MakePartition((group1, group2)),
+            event: StateEvent::NetworkPartition((group1, group2)),
         });
     }
 
-    pub fn process_reset_network(&mut self, time: f64) {
+    pub fn process_network_reset(&mut self, time: f64) {
         self.event_queue.push_back(EventQueueItem {
             time: time,
-            event: StateEvent::ResetNetwork(),
+            event: StateEvent::NetworkReset(),
         });
     }
 
@@ -747,7 +752,7 @@ impl State {
             StateEvent::PassOutgoing(node) => {
                 self.drop_outgoing.remove(&node);
             }
-            StateEvent::MakePartition((group1, group2)) => {
+            StateEvent::NetworkPartition((group1, group2)) => {
                 for node1 in &group1 {
                     for node2 in &group2 {
                         self.disabled_links.insert((node1.clone(), node2.clone()));
@@ -757,7 +762,7 @@ impl State {
                 self.partition = Some((group1, group2));
                 self.partition_nodes();
             }
-            StateEvent::ResetNetwork() => {
+            StateEvent::NetworkReset() => {
                 self.drop_incoming.clear();
                 self.drop_outgoing.clear();
                 self.disabled_links.clear();

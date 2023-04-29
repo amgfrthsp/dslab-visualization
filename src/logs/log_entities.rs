@@ -105,14 +105,14 @@ pub enum LogEntry {
         time: f64,
         node: String,
     },
-    MakePartition {
+    NetworkPartition {
         time: f64,
         group1_nodes: Vec<String>,
         group1_procs: Vec<String>,
         group2_nodes: Vec<String>,
         group2_procs: Vec<String>,
     },
-    ResetNetwork {
+    NetworkReset {
         time: f64,
     },
 }

@@ -263,7 +263,7 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::PassOutgoing(node)));
                 }
-                LogEntry::MakePartition {
+                LogEntry::NetworkPartition {
                     time,
                     group1_nodes,
                     group1_procs: _,
@@ -275,7 +275,7 @@ impl EventController {
                         ControllerStateCommand::MakePartition((group1_nodes, group2_nodes)),
                     ));
                 }
-                LogEntry::ResetNetwork { time } => {
+                LogEntry::NetworkReset { time } => {
                     self.commands
                         .push((time, ControllerStateCommand::ResetNetwork()));
                 }
@@ -354,10 +354,10 @@ impl EventController {
                     state.process_pass_outgoing(command.0, node.clone());
                 }
                 ControllerStateCommand::MakePartition((group1, group2)) => {
-                    state.process_make_partition(command.0, group1.clone(), group2.clone());
+                    state.process_network_partition(command.0, group1.clone(), group2.clone());
                 }
                 ControllerStateCommand::ResetNetwork() => {
-                    state.process_reset_network(command.0);
+                    state.process_network_reset(command.0);
                 }
             }
         }
