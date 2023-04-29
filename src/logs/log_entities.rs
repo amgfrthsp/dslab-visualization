@@ -17,16 +17,14 @@ pub enum LogEntry {
         msg_id: String,
         node: String,
         proc: String,
-        msg_tip: String,
-        msg_data: String,
+        msg: Message,
     },
     LocalMessageReceived {
         time: f64,
         msg_id: String,
         node: String,
         proc: String,
-        msg_tip: String,
-        msg_data: String,
+        msg: Message,
     },
     MessageSent {
         time: f64,
@@ -35,8 +33,7 @@ pub enum LogEntry {
         src_proc: String,
         dest_node: String,
         dest_proc: String,
-        msg_tip: String,
-        msg_data: String,
+        msg: Message,
     },
     MessageReceived {
         time: f64,
@@ -118,4 +115,10 @@ pub enum LogEntry {
     ResetNetwork {
         time: f64,
     },
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Message {
+    pub tip: String,
+    pub data: String,
 }

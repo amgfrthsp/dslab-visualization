@@ -116,15 +116,14 @@ impl EventController {
                     msg_id,
                     node,
                     proc,
-                    msg_tip,
-                    msg_data,
+                    msg,
                 } => {
                     let controller_msg = ControllerLocalMessage {
                         id: msg_id.clone(),
                         node,
                         proc,
-                        tip: msg_tip,
-                        data: msg_data,
+                        tip: msg.tip,
+                        data: msg.data,
                         time,
                         msg_type: LocalMessageType::Sent,
                     };
@@ -139,15 +138,14 @@ impl EventController {
                     msg_id,
                     node,
                     proc,
-                    msg_tip,
-                    msg_data,
+                    msg,
                 } => {
                     let controller_msg = ControllerLocalMessage {
                         id: msg_id.clone(),
                         node,
                         proc,
-                        tip: msg_tip,
-                        data: msg_data,
+                        tip: msg.tip,
+                        data: msg.data,
                         time,
                         msg_type: LocalMessageType::Received,
                     };
@@ -164,22 +162,21 @@ impl EventController {
                     src_proc,
                     dest_node,
                     dest_proc,
-                    msg_tip,
-                    msg_data,
+                    msg,
                 } => {
-                    let msg = ControllerMessage {
+                    let cont_msg = ControllerMessage {
                         id: msg_id.clone(),
                         src_node,
                         src_proc,
                         dest_node,
                         dest_proc,
-                        tip: msg_tip,
-                        data: msg_data,
+                        tip: msg.tip,
+                        data: msg.data,
                         time_sent: time,
                         time_received: -1.0,
                         copies_received: 0,
                     };
-                    self.messages.insert(msg.id.clone(), msg);
+                    self.messages.insert(cont_msg.id.clone(), cont_msg);
                     self.commands
                         .push((time, ControllerStateCommand::SendMessage(msg_id)));
                 }
