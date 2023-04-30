@@ -99,9 +99,9 @@ impl StateMessage {
         self.copies_received > 1
     }
 
-    pub fn is_delivered(&self) -> bool {
+    pub fn is_delivered(&self, current_time: f32) -> bool {
         if !self.is_dropped() {
-            calc_dist(self.pos, self.dest.borrow().pos) < 5.0
+            calc_dist(self.pos, self.dest.borrow().pos) < 5.0 || current_time >= self.time_delivered
         } else {
             let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
             calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.25
@@ -112,8 +112,8 @@ impl StateMessage {
         self.pos = self.src.borrow().pos;
     }
 
-    pub fn update_status(&mut self) {
-        if self.is_delivered() {
+    pub fn update_status(&mut self, current_time: f32) {
+        if self.is_delivered(current_time) {
             self.status = if self.is_dropped() && self.src.borrow().id != self.dest.borrow().id {
                 MessageStatus::Dropped
             } else {
@@ -127,7 +127,7 @@ impl StateMessage {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MessageStatus {
     Queued,
     OnTheWay,

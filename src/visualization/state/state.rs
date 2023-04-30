@@ -340,28 +340,20 @@ impl State {
         for (_, node) in &mut self.nodes {
             node.borrow_mut().update(self.current_time);
         }
-        for (_, msg) in &mut self.travelling_messages {
-            let mut mut_msg = msg.borrow_mut();
-            mut_msg.update(self.global_speed, self.current_time as f32);
-            mut_msg.update_status();
-            if mut_msg.is_delivered() && !mut_msg.is_dropped() {
-                for _ in 0..mut_msg.copies_received {
-                    mut_msg
-                        .dest
-                        .borrow_mut()
-                        .messages_received
-                        .push(mut_msg.id.clone());
+        self.travelling_messages.retain(|id, msg_ref| {
+            let mut msg = msg_ref.borrow_mut();
+            msg.update(self.global_speed, self.current_time as f32);
+            msg.update_status(self.current_time as f32);
+            if msg.status == MessageStatus::Delivered {
+                for _ in 0..msg.copies_received {
+                    msg.dest.borrow_mut().messages_received.push(id.clone());
                 }
+                false
+            } else if msg.status == MessageStatus::Dropped {
+                false
+            } else {
+                true
             }
-        }
-        self.travelling_messages.retain(|_, msg| {
-            let msg_borrow = msg.borrow();
-            if !msg_borrow.is_delivered()
-                && (msg_borrow.is_dropped() || self.current_time < msg_borrow.time_delivered.into())
-            {
-                return true;
-            }
-            false
         });
     }
 
@@ -544,7 +536,7 @@ impl State {
     pub fn draw_ui_node_windows(&mut self, egui_ctx: &Context) {
         for (node, show_window) in &mut self.ui_data.show_node_windows {
             let node = self.nodes.get(node).unwrap().borrow();
-            egui::Window::new(format!("Node {}", node.id))
+            egui::Window::new(format!("Node {}", node.name))
                 .open(show_window)
                 .show(egui_ctx, |ui| {
                     ui.label(format!(
@@ -585,7 +577,7 @@ impl State {
                             for msg_id in &node.messages_sent {
                                 let msg = self.messages.get(msg_id).unwrap().borrow();
                                 ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("To: {}", msg.dest.borrow().id));
+                                ui.label(format!("To: {}", msg.dest.borrow().name));
                                 ui.label(format!("Sent at: {}", msg.time_sent));
                                 ui.label(format!("Status: {:?}", msg.status));
                                 ui.label(format!("Type: {}", msg.tip));
@@ -601,7 +593,7 @@ impl State {
                             for msg_id in &node.messages_received {
                                 let msg = self.messages.get(msg_id).unwrap().borrow();
                                 ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("From: {}", msg.src.borrow().id));
+                                ui.label(format!("From: {}", msg.src.borrow().name));
                                 ui.label(format!("Received at: {}", msg.time_delivered));
                                 ui.label(format!("Type: {}", msg.tip));
                                 ui.label(format!("Data: {}", msg.data));
@@ -688,14 +680,23 @@ impl State {
                 self.nodes.get_mut(&node).unwrap().borrow_mut().show = true;
             }
             StateEvent::MessageSent(msg_id) => {
-                self.travelling_messages.insert(
-                    msg_id.clone(),
-                    Rc::clone(self.messages.get(&msg_id).unwrap()),
+                let msg = self.messages.get(&msg_id).unwrap().clone();
+                msg.borrow()
+                    .src
+                    .borrow_mut()
+                    .messages_sent
+                    .push(msg_id.clone());
+                let link = (
+                    msg.borrow().src.borrow().name.clone(),
+                    msg.borrow().dest.borrow().name.clone(),
                 );
-                let mut msg = self.messages.get_mut(&msg_id).unwrap().borrow_mut();
-                msg.update_start_pos();
-                msg.set_status(MessageStatus::OnTheWay);
-                msg.src.borrow_mut().messages_sent.push(msg.id.clone());
+                if self.disabled_links.contains(&link) {
+                    msg.borrow_mut().set_status(MessageStatus::Dropped);
+                } else {
+                    msg.borrow_mut().update_start_pos();
+                    msg.borrow_mut().set_status(MessageStatus::OnTheWay);
+                    self.travelling_messages.insert(msg_id, msg);
+                }
             }
             StateEvent::NodeDisconnected(node) => {
                 self.nodes.get_mut(&node).unwrap().borrow_mut().connected = false
