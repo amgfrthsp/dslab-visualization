@@ -681,16 +681,18 @@ impl State {
             }
             StateEvent::MessageSent(msg_id) => {
                 let msg = self.messages.get(&msg_id).unwrap().clone();
+
                 msg.borrow()
                     .src
                     .borrow_mut()
                     .messages_sent
                     .push(msg_id.clone());
-                let link = (
-                    msg.borrow().src.borrow().name.clone(),
-                    msg.borrow().dest.borrow().name.clone(),
-                );
-                if self.disabled_links.contains(&link) {
+                let src = msg.borrow().src.borrow().name.clone();
+                let dest = msg.borrow().dest.borrow().name.clone();
+                if self.drop_incoming.contains(&dest)
+                    || self.drop_incoming.contains(&src)
+                    || self.disabled_links.contains(&(src, dest))
+                {
                     msg.borrow_mut().set_status(MessageStatus::Dropped);
                 } else {
                     msg.borrow_mut().update_start_pos();
