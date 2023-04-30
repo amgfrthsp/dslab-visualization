@@ -104,7 +104,7 @@ impl StateMessage {
             calc_dist(self.pos, self.dest.borrow().pos) < 5.0
         } else {
             let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
-            calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.5
+            calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.25
         }
     }
 

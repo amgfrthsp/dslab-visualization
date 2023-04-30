@@ -199,10 +199,7 @@ impl State {
         };
         self.local_messages.insert(id, msg);
 
-        self.event_queue.push_back(EventQueueItem {
-            time,
-            event,
-        });
+        self.event_queue.push_back(EventQueueItem { time, event });
     }
 
     pub fn process_node_disconnected(&mut self, time: f64, node: String) {
@@ -523,10 +520,7 @@ impl State {
                     for node in &self.ui_data.ordered_nodes {
                         let show_events = self.ui_data.show_events_for_node.get_mut(node).unwrap();
                         let node_id = self.nodes.get(node).unwrap().borrow().id;
-                        ui.add(Checkbox::new(
-                            show_events,
-                            format!("Node {}", node_id),
-                        ));
+                        ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
                     }
                 });
                 ui.set_max_height(f32::INFINITY);
@@ -763,6 +757,7 @@ impl State {
                 self.partition_nodes();
             }
             StateEvent::NetworkReset() => {
+                self.partition = None;
                 self.drop_incoming.clear();
                 self.drop_outgoing.clear();
                 self.disabled_links.clear();

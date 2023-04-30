@@ -223,29 +223,13 @@ impl EventController {
                 LogEntry::TimerCancelled { time, timer_id } => {
                     self.timers.get_mut(&timer_id).unwrap().time_removed = time;
                 }
-                LogEntry::LinkDisabled {
-                    time,
-                    from_node,
-                    from_proc: _,
-                    to_node,
-                    to_proc: _,
-                } => {
-                    self.commands.push((
-                        time,
-                        ControllerStateCommand::LinkDisabled((from_node, to_node)),
-                    ));
+                LogEntry::LinkDisabled { time, from, to } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::LinkDisabled((from, to))));
                 }
-                LogEntry::LinkEnabled {
-                    time,
-                    from_node,
-                    from_proc: _,
-                    to_node,
-                    to_proc: _,
-                } => {
-                    self.commands.push((
-                        time,
-                        ControllerStateCommand::LinkEnabled((from_node, to_node)),
-                    ));
+                LogEntry::LinkEnabled { time, from, to } => {
+                    self.commands
+                        .push((time, ControllerStateCommand::LinkEnabled((from, to))));
                 }
                 LogEntry::DropIncoming { time, node } => {
                     self.commands
@@ -265,14 +249,12 @@ impl EventController {
                 }
                 LogEntry::NetworkPartition {
                     time,
-                    group1_nodes,
-                    group1_procs: _,
-                    group2_nodes,
-                    group2_procs: _,
+                    group1,
+                    group2,
                 } => {
                     self.commands.push((
                         time,
-                        ControllerStateCommand::NetworkPartition((group1_nodes, group2_nodes)),
+                        ControllerStateCommand::NetworkPartition((group1, group2)),
                     ));
                 }
                 LogEntry::NetworkReset { time } => {

@@ -77,17 +77,13 @@ pub enum LogEntry {
     },
     LinkDisabled {
         time: f64,
-        from_node: String,
-        from_proc: String,
-        to_node: String,
-        to_proc: String,
+        from: String,
+        to: String,
     },
     LinkEnabled {
         time: f64,
-        from_node: String,
-        from_proc: String,
-        to_node: String,
-        to_proc: String,
+        from: String,
+        to: String,
     },
     DropIncoming {
         time: f64,
@@ -107,10 +103,8 @@ pub enum LogEntry {
     },
     NetworkPartition {
         time: f64,
-        group1_nodes: Vec<String>,
-        group1_procs: Vec<String>,
-        group2_nodes: Vec<String>,
-        group2_procs: Vec<String>,
+        group1: Vec<String>,
+        group2: Vec<String>,
     },
     NetworkReset {
         time: f64,
