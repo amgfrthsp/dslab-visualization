@@ -511,8 +511,8 @@ impl State {
                 ScrollArea::vertical().show(ui, |ui| {
                     for node in &self.ui_data.ordered_nodes {
                         let show_events = self.ui_data.show_events_for_node.get_mut(node).unwrap();
-                        let node_id = self.nodes.get(node).unwrap().borrow().id;
-                        ui.add(Checkbox::new(show_events, format!("Node {}", node_id)));
+                        let node = self.nodes.get(node).unwrap().borrow().name.clone();
+                        ui.add(Checkbox::new(show_events, format!("Node {}", node)));
                     }
                 });
                 ui.set_max_height(f32::INFINITY);
