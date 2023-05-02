@@ -12,6 +12,7 @@ pub struct StateNode {
     pub id: u32,
     pub pos: Vec2,
     pub connected: bool,
+    pub state: String,
     pub local_messages_sent: Vec<StateLocalMessage>,
     pub local_messages_received: Vec<StateLocalMessage>,
     pub messages_sent: Vec<String>,

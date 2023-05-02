@@ -25,6 +25,7 @@ pub enum ControllerStateCommand {
     PassOutgoing(String),
     NetworkPartition((Vec<String>, Vec<String>)),
     NetworkReset(),
+    NodeStateUpdated((String, String)),
 }
 
 pub struct EventController {
@@ -261,6 +262,17 @@ impl EventController {
                     self.commands
                         .push((time, ControllerStateCommand::NetworkReset()));
                 }
+                LogEntry::ProcessStateUpdated {
+                    time,
+                    node,
+                    proc: _,
+                    state,
+                } => {
+                    self.commands.push((
+                        time,
+                        ControllerStateCommand::NodeStateUpdated((node, state)),
+                    ));
+                }
             }
         }
     }
@@ -340,6 +352,13 @@ impl EventController {
                 }
                 ControllerStateCommand::NetworkReset() => {
                     state.process_network_reset(command.0);
+                }
+                ControllerStateCommand::NodeStateUpdated((node, process_state)) => {
+                    state.process_state_updated(
+                        command.0,
+                        node.to_string(),
+                        process_state.to_string(),
+                    );
                 }
             }
         }

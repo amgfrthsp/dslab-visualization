@@ -7,6 +7,7 @@ use std::{
 
 use egui::{Checkbox, Context, ScrollArea, Slider};
 use macroquad::prelude::*;
+use serde_json::json;
 
 use crate::visualization::utilities::*;
 
@@ -32,6 +33,7 @@ pub enum StateEvent {
     PassOutgoing(String),
     NetworkPartition((Vec<String>, Vec<String>)),
     NetworkReset(),
+    NodeStateUpdated((String, String)),
 }
 
 #[derive(Clone)]
@@ -114,6 +116,7 @@ impl State {
             id,
             pos,
             connected: true,
+            state: String::from(""),
             local_messages_sent: Vec::new(),
             local_messages_received: Vec::new(),
             messages_sent: Vec::new(),
@@ -298,6 +301,13 @@ impl State {
         self.event_queue.push_back(EventQueueItem {
             time,
             event: StateEvent::NetworkReset(),
+        });
+    }
+
+    pub fn process_state_updated(&mut self, time: f64, node: String, node_state: String) {
+        self.event_queue.push_back(EventQueueItem {
+            time,
+            event: StateEvent::NodeStateUpdated((node, node_state)),
         });
     }
 
@@ -547,6 +557,14 @@ impl State {
                             "Disconnected"
                         }
                     ));
+                    ui.collapsing("State", |ui| {
+                        ui.set_max_height(screen_height() * 0.3);
+                        let pretty_state = serde_json::to_string_pretty(&node.state).unwrap();
+                        ScrollArea::vertical().show(ui, |ui| {
+                            ui.label(format!("{}", pretty_state));
+                        });
+                        ui.set_max_height(f32::INFINITY);
+                    });
                     ui.collapsing("Sent local messages", |ui| {
                         ui.set_max_height(screen_height() * 0.3);
                         ScrollArea::vertical().show(ui, |ui| {
@@ -766,6 +784,9 @@ impl State {
                 self.disabled_links.clear();
                 let center = Vec2::new(screen_width() / 2., screen_height() / 2.);
                 self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
+            }
+            StateEvent::NodeStateUpdated((node, node_state)) => {
+                self.nodes.get_mut(&node).unwrap().borrow_mut().state = node_state;
             }
         }
         true

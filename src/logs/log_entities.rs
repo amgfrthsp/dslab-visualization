@@ -109,6 +109,12 @@ pub enum LogEntry {
     NetworkReset {
         time: f64,
     },
+    ProcessStateUpdated {
+        time: f64,
+        node: String,
+        proc: String,
+        state: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
