@@ -7,7 +7,7 @@ use std::{
 
 use egui::{Checkbox, Context, ScrollArea, Slider};
 use macroquad::prelude::*;
-use serde_json::json;
+use serde_json::Value;
 
 use crate::visualization::utilities::*;
 
@@ -95,7 +95,7 @@ impl State {
                 selected_node: None,
                 selected_mouse_position: Vec2::new(0., 0.),
                 hovered_timer: None,
-                show_timers: true,
+                show_timers: false,
             },
             drop_outgoing: HashSet::new(),
             drop_incoming: HashSet::new(),
@@ -559,9 +559,8 @@ impl State {
                     ));
                     ui.collapsing("State", |ui| {
                         ui.set_max_height(screen_height() * 0.3);
-                        let pretty_state = serde_json::to_string_pretty(&node.state).unwrap();
                         ScrollArea::vertical().show(ui, |ui| {
-                            ui.label(format!("{}", pretty_state));
+                            ui.label(format!("{}", node.state));
                         });
                         ui.set_max_height(f32::INFINITY);
                     });
@@ -786,7 +785,9 @@ impl State {
                 self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
             }
             StateEvent::NodeStateUpdated((node, node_state)) => {
-                self.nodes.get_mut(&node).unwrap().borrow_mut().state = node_state;
+                let value: Value = serde_json::from_str(&node_state).unwrap();
+                let pretty_state = serde_json::to_string_pretty(&value).unwrap();
+                self.nodes.get_mut(&node).unwrap().borrow_mut().state = pretty_state;
             }
         }
         true
