@@ -16,6 +16,24 @@ pub struct StateTimer {
 }
 
 impl StateTimer {
+    pub fn new(
+        id: String,
+        name: String,
+        time_set: f64,
+        node: String,
+        delay: f64,
+        time_removed: f64,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            time_set,
+            node,
+            delay,
+            time_removed,
+            k: -1,
+        }
+    }
     pub fn get_position(&self, node_pos: Vec2) -> Vec2 {
         let angle = (2.0 * PI / (TIMERS_MAX_NUMBER as f32)) * (self.k as f32);
         node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.)

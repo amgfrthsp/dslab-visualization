@@ -228,15 +228,7 @@ impl State {
         delay: f64,
         time_removed: f64,
     ) {
-        let timer = StateTimer {
-            id,
-            name,
-            time_set,
-            node,
-            delay,
-            time_removed,
-            k: -1,
-        };
+        let timer = StateTimer::new(id, name, time_set, node, delay, time_removed);
         self.event_queue.push_back(EventQueueItem {
             time: time_set,
             event: StateEvent::TimerSet(timer),
@@ -808,7 +800,11 @@ impl State {
         for i in 0..nodes.len() {
             let angle = (2.0 * PI / (nodes.len() as f32)) * (i as f32);
             let pos = center + Vec2::from_angle(angle as f32) * circle_radius;
-            self.nodes.get_mut(&nodes[i]).unwrap().borrow_mut().pos = pos;
+            self.nodes
+                .get_mut(&nodes[i])
+                .unwrap()
+                .borrow_mut()
+                .update_pos(pos);
         }
     }
 }
