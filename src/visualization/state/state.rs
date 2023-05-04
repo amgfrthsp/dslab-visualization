@@ -176,13 +176,7 @@ impl State {
             msg_type = LocalMessageType::Received;
             event = StateEvent::LocalMessageReceived(id.clone());
         }
-        let msg = StateLocalMessage {
-            id: id.clone(),
-            time,
-            node,
-            data,
-            msg_type,
-        };
+        let msg = StateLocalMessage::new(id.clone(), time, node, data, msg_type);
         self.local_messages.insert(id, msg);
 
         self.event_queue.push_back(EventQueueItem { time, event });

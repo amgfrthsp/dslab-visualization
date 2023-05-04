@@ -7,6 +7,24 @@ pub struct StateLocalMessage {
     pub msg_type: LocalMessageType,
 }
 
+impl StateLocalMessage {
+    pub fn new(
+        id: String,
+        time: f64,
+        node: String,
+        data: String,
+        msg_type: LocalMessageType,
+    ) -> Self {
+        Self {
+            id,
+            time,
+            node,
+            data,
+            msg_type,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum LocalMessageType {
     Sent,
