@@ -22,6 +22,34 @@ pub struct StateMessage {
 }
 
 impl StateMessage {
+    pub fn new(
+        id: String,
+        src: Rc<RefCell<StateNode>>,
+        dest: Rc<RefCell<StateNode>>,
+        tip: String,
+        data: String,
+        status: MessageStatus,
+        time_sent: f32,
+        time_delivered: f32,
+        copies_received: u64,
+    ) -> Self {
+        let pos = src.borrow().pos;
+        Self {
+            id,
+            pos,
+            src,
+            dest,
+            tip,
+            data,
+            status,
+            time_sent,
+            time_delivered,
+            copies_received,
+            last_color_change: 0.,
+            drop_color: WHITE,
+        }
+    }
+
     pub fn get_direction(&self) -> Vec2 {
         self.dest.borrow().pos - self.pos
     }

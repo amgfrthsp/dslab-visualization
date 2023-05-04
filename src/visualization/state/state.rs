@@ -154,20 +154,17 @@ impl State {
         }
 
         let src_node = self.nodes.get(src).unwrap();
-        let msg = StateMessage {
-            id: id.clone(),
-            pos: src_node.borrow().pos,
-            src: Rc::clone(src_node),
-            dest: Rc::clone(self.nodes.get(dest).unwrap()),
+        let msg = StateMessage::new(
+            id.clone(),
+            Rc::clone(src_node),
+            Rc::clone(self.nodes.get(dest).unwrap()),
             tip,
             data,
-            status: MessageStatus::Queued,
-            time_sent: time as f32,
-            time_delivered: time as f32 + duration,
+            MessageStatus::Queued,
+            time as f32,
+            time as f32 + duration,
             copies_received,
-            last_color_change: 0.,
-            drop_color: WHITE,
-        };
+        );
         self.messages.insert(id.clone(), Rc::new(RefCell::new(msg)));
         self.event_queue.push_back(EventQueueItem {
             time,
