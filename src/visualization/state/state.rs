@@ -111,21 +111,7 @@ impl State {
 
     pub fn process_node_started(&mut self, time: f64, name: String, id: u32, pos: Vec2) {
         let color = self.node_colors.pop_front().unwrap_or(DEFAULT_NODE_COLOR);
-        let node = StateNode {
-            name,
-            id,
-            pos,
-            connected: true,
-            state: String::from(""),
-            local_messages_sent: Vec::new(),
-            local_messages_received: Vec::new(),
-            messages_sent: Vec::new(),
-            messages_received: Vec::new(),
-            timers: VecDeque::new(),
-            free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
-            color,
-            show: false,
-        };
+        let node = StateNode::new(name, id, pos, color);
         self.ui_data
             .show_events_for_node
             .insert(node.name.clone(), true);

@@ -24,6 +24,24 @@ pub struct StateNode {
 }
 
 impl StateNode {
+    pub fn new(name: String, id: u32, pos: Vec2, color: Color) -> Self {
+        Self {
+            name,
+            id,
+            pos,
+            color,
+            connected: true,
+            state: String::from(""),
+            local_messages_sent: Vec::new(),
+            local_messages_received: Vec::new(),
+            messages_sent: Vec::new(),
+            messages_received: Vec::new(),
+            timers: VecDeque::new(),
+            free_timer_slots: (0..TIMERS_MAX_NUMBER).collect(),
+            show: false,
+        }
+    }
+
     pub fn update_pos(&mut self, new_pos: Vec2) {
         self.pos = new_pos;
     }
