@@ -4,6 +4,8 @@ use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
 
+use super::state::State;
+
 #[derive(Debug, Clone)]
 pub struct StateTimer {
     pub id: String,
@@ -34,20 +36,23 @@ impl StateTimer {
             k: -1,
         }
     }
-    pub fn get_position(&self, node_pos: Vec2) -> Vec2 {
+    pub fn get_position(&self, node_pos: Vec2, node_radius: f32, timer_radius: f32) -> Vec2 {
         let angle = (2.0 * PI / (TIMERS_MAX_NUMBER as f32)) * (self.k as f32);
-        node_pos + Vec2::from_angle(angle as f32) * (NODE_RADIUS + TIMER_RADIUS + 5.)
+        node_pos + Vec2::from_angle(angle as f32) * (node_radius + timer_radius + 5.)
     }
 
-    pub fn check_hovered(&self, node_pos: Vec2) -> bool {
+    pub fn check_hovered(&self, node_pos: Vec2, node_radius: f32, timer_radius: f32) -> bool {
         let mouse_pos = Vec2::from(mouse_position());
-        calc_dist(self.get_position(node_pos), mouse_pos) <= TIMER_RADIUS
+        calc_dist(
+            self.get_position(node_pos, node_radius, timer_radius),
+            mouse_pos,
+        ) <= timer_radius
     }
 
-    pub fn draw(&self, node_pos: Vec2, current_time: f64) {
-        let pos = self.get_position(node_pos);
+    pub fn draw(&self, node_pos: Vec2, state: &State) {
+        let pos = self.get_position(node_pos, state.get_node_radius(), state.get_timer_radius());
         let mut color = TIMER_COLOR;
-        if current_time >= self.time_removed {
+        if state.current_time >= self.time_removed {
             color = if self.time_removed < self.time_set + self.delay {
                 CANCELLED_TIMER_COLOR
             } else {
@@ -55,15 +60,15 @@ impl StateTimer {
             };
         }
         let end_angle =
-            ((current_time - self.time_set) * 2. * (PI as f64) / self.delay) as f32 - PI / 2.;
+            ((state.current_time - self.time_set) * 2. * (PI as f64) / self.delay) as f32 - PI / 2.;
         draw_circle_segment(
             pos.x,
             pos.y,
-            TIMER_RADIUS,
+            state.get_timer_radius(),
             -PI / 2.,
             end_angle as f32,
             color,
         );
-        draw_circle_lines(pos.x, pos.y, TIMER_RADIUS, 2., color)
+        draw_circle_lines(pos.x, pos.y, state.get_timer_radius(), 2., color)
     }
 }

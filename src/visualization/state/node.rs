@@ -4,7 +4,7 @@ use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
 
-use super::{local_message::StateLocalMessage, timer::*};
+use super::{local_message::StateLocalMessage, state::State, timer::*};
 
 #[derive(Debug, Clone)]
 pub struct StateNode {
@@ -66,10 +66,14 @@ impl StateNode {
             .retain(|timer| current_time < timer.time_removed + 1.5);
     }
 
-    pub fn check_for_hovered_timer(&self) -> Option<StateTimer> {
+    pub fn check_for_hovered_timer(
+        &self,
+        node_radius: f32,
+        timer_radius: f32,
+    ) -> Option<StateTimer> {
         let mut hovered_timer: Option<StateTimer> = None;
         for timer in &self.timers {
-            if timer.check_hovered(self.get_pos()) {
+            if timer.check_hovered(self.get_pos(), node_radius, timer_radius) {
                 hovered_timer = Some(timer.clone());
                 break;
             }
@@ -77,12 +81,12 @@ impl StateNode {
         hovered_timer
     }
 
-    pub fn draw(&self, show_events: bool, current_time: f64, show_timers: bool) {
+    pub fn draw(&self, state: &State) {
         let pos = self.get_pos();
         draw_circle(
             pos.x,
             pos.y,
-            NODE_RADIUS,
+            state.get_node_radius(),
             if self.connected {
                 self.color
             } else {
@@ -90,12 +94,23 @@ impl StateNode {
             },
         );
 
-        let font_size = (NODE_RADIUS * 2.0).floor() as u16;
+        let font_size = (state.get_node_radius() * 2.0).floor() as u16;
         let text_size = measure_text(&self.name, None, font_size, 1.0);
         let text_position = Vec2::new(
             pos.x - text_size.width / 2.0,
             pos.y + text_size.height / 2.0,
         );
+
+        let show_events = *state.ui_data.show_events_for_node.get(&self.name).unwrap();
+
+        if show_events && state.ui_data.show_timers {
+            for i in 0..self.timers.len() {
+                if self.timers[i].k == -1 {
+                    break;
+                }
+                self.timers[i].draw(pos, state);
+            }
+        }
 
         draw_text_ex(
             &self.name,
@@ -107,14 +122,5 @@ impl StateNode {
                 ..Default::default()
             },
         );
-
-        if show_events && show_timers {
-            for i in 0..self.timers.len() {
-                if self.timers[i].k == -1 {
-                    break;
-                }
-                self.timers[i].draw(pos, current_time);
-            }
-        }
     }
 }

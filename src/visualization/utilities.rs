@@ -1,9 +1,9 @@
 use macroquad::prelude::*;
 
-pub const NODE_RADIUS: f32 = 15.;
-pub const MESSAGE_RADIUS: f32 = 5.;
-pub const CIRCLE_RADIUS: f32 = 150.;
-pub const TIMER_RADIUS: f32 = 8.;
+pub const DEFAULT_NODE_RADIUS: f32 = 15.;
+pub const DEFAULT_MESSAGE_RADIUS: f32 = 5.;
+pub const CIRCLE_RADIUS: f32 = 160.;
+pub const DEFAULT_TIMER_RADIUS: f32 = 8.;
 pub const PARTITIONED_CIRCLE_RADIUS: f32 = 100.;
 pub const FPS: f32 = 60.0;
 
@@ -15,6 +15,7 @@ pub const READY_TIMER_COLOR: Color = GREEN;
 pub const CANCELLED_TIMER_COLOR: Color = RED;
 
 pub const GLOBAL_SPEED_DELTA: f32 = 0.0002;
+pub const SCALE_COEF_DELTA: f32 = 0.05;
 pub const MAX_MESSAGE_SPEED: f32 = 30.;
 pub const DEFAULT_GLOBAL_SPEED: f32 = 0.001;
 

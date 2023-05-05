@@ -3,7 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use crate::visualization::utilities::*;
 use macroquad::prelude::*;
 
-use super::node::*;
+use super::{node::*, state::State};
 
 #[derive(Debug, Clone)]
 pub struct StateMessage {
@@ -18,7 +18,7 @@ pub struct StateMessage {
     pub time_delivered: f32,
     pub copies_received: u64,
     pub last_color_change: f64,
-    pub drop_color: Color,
+    pub color: Color,
 }
 
 impl StateMessage {
@@ -34,6 +34,7 @@ impl StateMessage {
         copies_received: u64,
     ) -> Self {
         let relative_pos = get_relative_pos(src.borrow().get_pos());
+        let color = src.borrow().color;
         Self {
             id,
             relative_pos,
@@ -46,7 +47,7 @@ impl StateMessage {
             time_delivered,
             copies_received,
             last_color_change: 0.,
-            drop_color: WHITE,
+            color,
         }
     }
 
@@ -80,6 +81,19 @@ impl StateMessage {
         let direction = self.get_direction();
         let own_speed = self.get_own_speed(current_time);
         self.update_pos(self.get_pos() + direction.normalize() * own_speed * global_speed);
+
+        let time = get_time();
+        if self.is_dropped() && time - self.last_color_change >= 0.3 {
+            self.color = if self.color == BLACK {
+                self.src.borrow().color
+            } else {
+                BLACK
+            };
+            self.last_color_change = time;
+        }
+        if !self.is_dropped() {
+            self.color = self.src.borrow().color
+        };
     }
 
     pub fn update_with_jump(&mut self, global_speed: f32, current_time: f32, delta: f32) {
@@ -89,25 +103,11 @@ impl StateMessage {
         self.update_pos(self.get_pos() + direction.normalize() * jump_dist);
     }
 
-    pub fn draw(&mut self) {
+    pub fn draw(&self, state: &State) {
         let pos = self.get_pos();
-        let time = get_time();
-        if self.is_dropped() && time - self.last_color_change >= 0.3 {
-            self.drop_color = if self.drop_color == BLACK {
-                self.src.borrow().color
-            } else {
-                BLACK
-            };
-            self.last_color_change = time;
-        }
-        let color = if self.is_dropped() {
-            self.drop_color
-        } else {
-            self.src.borrow().color
-        };
-        draw_circle(pos.x, pos.y, MESSAGE_RADIUS, color);
+        draw_circle(pos.x, pos.y, state.get_msg_radius(), self.color);
         if self.is_duplicated() {
-            let font_size = (MESSAGE_RADIUS * 2.0).floor() as u16;
+            let font_size = (state.get_msg_radius() * 2.0).floor() as u16;
             let text = self.copies_received.to_string();
             let text_size = measure_text(&text, None, font_size, 1.0);
             let text_position = Vec2::new(

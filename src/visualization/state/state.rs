@@ -44,33 +44,34 @@ pub struct EventQueueItem {
 
 #[derive(Clone)]
 pub struct UIData {
-    ordered_nodes: Vec<String>,
-    show_events_for_node: HashMap<String, bool>,
-    show_node_windows: HashMap<String, bool>,
-    show_msg_windows: HashMap<String, bool>,
-    last_clicked: f64,
-    selected_node: Option<String>,
-    selected_mouse_position: Vec2,
-    hovered_timer: Option<StateTimer>,
-    show_timers: bool,
+    pub ordered_nodes: Vec<String>,
+    pub show_events_for_node: HashMap<String, bool>,
+    pub show_node_windows: HashMap<String, bool>,
+    pub show_msg_windows: HashMap<String, bool>,
+    pub last_clicked: f64,
+    pub selected_node: Option<String>,
+    pub selected_mouse_position: Vec2,
+    pub hovered_timer: Option<StateTimer>,
+    pub show_timers: bool,
 }
 
 pub struct State {
-    nodes: HashMap<String, Rc<RefCell<StateNode>>>,
-    travelling_messages: HashMap<String, Rc<RefCell<StateMessage>>>,
-    messages: HashMap<String, Rc<RefCell<StateMessage>>>,
-    local_messages: HashMap<String, StateLocalMessage>,
-    event_queue: VecDeque<EventQueueItem>,
-    current_time: f64,
-    last_updated: f64,
-    paused: bool,
-    global_speed: f32,
-    ui_data: UIData,
-    node_colors: VecDeque<Color>,
-    drop_outgoing: HashSet<String>,
-    drop_incoming: HashSet<String>,
-    disabled_links: HashSet<(String, String)>,
-    partition: Option<(Vec<String>, Vec<String>)>,
+    pub nodes: HashMap<String, Rc<RefCell<StateNode>>>,
+    pub travelling_messages: HashMap<String, Rc<RefCell<StateMessage>>>,
+    pub messages: HashMap<String, Rc<RefCell<StateMessage>>>,
+    pub local_messages: HashMap<String, StateLocalMessage>,
+    pub event_queue: VecDeque<EventQueueItem>,
+    pub current_time: f64,
+    pub last_updated: f64,
+    pub paused: bool,
+    pub global_speed: f32,
+    pub ui_data: UIData,
+    pub node_colors: VecDeque<Color>,
+    pub drop_outgoing: HashSet<String>,
+    pub drop_incoming: HashSet<String>,
+    pub disabled_links: HashSet<(String, String)>,
+    pub partition: Option<(Vec<String>, Vec<String>)>,
+    pub scale_coef: f32,
 }
 
 impl State {
@@ -104,6 +105,7 @@ impl State {
                 ORANGE, YELLOW, GREEN, SKYBLUE, BLUE, PURPLE, GOLD, LIGHTGRAY, PINK, LIME, VIOLET,
                 WHITE, MAGENTA,
             ]),
+            scale_coef: 1.,
         }
     }
 
@@ -322,19 +324,17 @@ impl State {
             let end = (screen_width() / 2., screen_height());
             draw_line(start.0, start.1, end.0, end.1, 5., LIGHTGRAY);
         }
-        for (node_name, node) in &self.nodes {
-            let show_events = *self.ui_data.show_events_for_node.get(node_name).unwrap();
-            node.borrow()
-                .draw(show_events, self.current_time, self.ui_data.show_timers);
+        for (_, node) in &self.nodes {
+            node.borrow().draw(&self);
         }
-        for (_, msg) in &mut self.travelling_messages {
-            let mut msg_borrowed = msg.borrow_mut();
+        for (_, msg) in &self.travelling_messages {
+            let msg_borrowed = msg.borrow();
             let src = &msg_borrowed.src.borrow().name.clone();
             let dest = &msg_borrowed.dest.borrow().name.clone();
             let show_message = *self.ui_data.show_events_for_node.get(src).unwrap()
                 || *self.ui_data.show_events_for_node.get(dest).unwrap();
             if show_message {
-                msg_borrowed.draw();
+                msg_borrowed.draw(&self);
             }
         }
         self.draw_time();
@@ -368,6 +368,12 @@ impl State {
                 );
             }
             self.current_time = new_current_time;
+        }
+        if is_key_down(KeyCode::KpAdd) || is_key_down(KeyCode::Equal) {
+            self.scale_coef += SCALE_COEF_DELTA;
+        }
+        if is_key_down(KeyCode::Minus) || is_key_down(KeyCode::KpSubtract) {
+            self.scale_coef = f32::max(0.0, self.scale_coef - SCALE_COEF_DELTA);
         }
         if is_key_down(KeyCode::Up) {
             self.global_speed += GLOBAL_SPEED_DELTA;
@@ -413,7 +419,9 @@ impl State {
         }
         if self.ui_data.show_timers {
             for (_, node) in &self.nodes {
-                self.ui_data.hovered_timer = node.borrow().check_for_hovered_timer();
+                self.ui_data.hovered_timer = node
+                    .borrow()
+                    .check_for_hovered_timer(self.get_node_radius(), self.get_timer_radius());
                 if self.ui_data.hovered_timer.is_some() {
                     break;
                 }
@@ -424,7 +432,7 @@ impl State {
     pub fn get_msg_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, msg) in &self.travelling_messages {
             if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), msg.borrow().get_pos())
-                < MESSAGE_RADIUS
+                < self.get_msg_radius()
             {
                 return Some(msg.borrow().id.clone());
             }
@@ -434,7 +442,8 @@ impl State {
 
     pub fn get_node_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, node) in &self.nodes {
-            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.borrow().get_pos()) < NODE_RADIUS
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.borrow().get_pos())
+                < self.get_node_radius()
             {
                 return Some(node.borrow().name.clone());
             }
@@ -767,5 +776,17 @@ impl State {
                 .borrow_mut()
                 .update_pos(pos);
         }
+    }
+
+    pub fn get_node_radius(&self) -> f32 {
+        DEFAULT_NODE_RADIUS * self.scale_coef
+    }
+
+    pub fn get_msg_radius(&self) -> f32 {
+        DEFAULT_MESSAGE_RADIUS * self.scale_coef
+    }
+
+    pub fn get_timer_radius(&self) -> f32 {
+        DEFAULT_TIMER_RADIUS * self.scale_coef
     }
 }
