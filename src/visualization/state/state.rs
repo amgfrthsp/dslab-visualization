@@ -71,7 +71,6 @@ pub struct State {
     drop_incoming: HashSet<String>,
     disabled_links: HashSet<(String, String)>,
     partition: Option<(Vec<String>, Vec<String>)>,
-    prev_screen_size: (f32, f32),
 }
 
 impl State {
@@ -101,7 +100,6 @@ impl State {
             drop_incoming: HashSet::new(),
             disabled_links: HashSet::new(),
             partition: None,
-            prev_screen_size: (0., 0.),
             node_colors: VecDeque::from([
                 ORANGE, YELLOW, GREEN, SKYBLUE, BLUE, PURPLE, GOLD, LIGHTGRAY, PINK, LIME, VIOLET,
                 WHITE, MAGENTA,
@@ -281,24 +279,6 @@ impl State {
     }
 
     pub fn update(&mut self) {
-        let screen_size = (screen_width(), screen_height());
-        if screen_size != self.prev_screen_size {
-            for (_, msg) in &mut self.travelling_messages {
-                let old_pos = msg.borrow().src.borrow().pos;
-                msg.borrow_mut().pos -= old_pos;
-            }
-            if self.partition.is_some() {
-                self.partition_nodes();
-            } else {
-                let center = Vec2::from((screen_width() / 2., screen_height() / 2.));
-                self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
-            }
-            for (_, msg) in &mut self.travelling_messages {
-                let new_pos = msg.borrow().src.borrow().pos;
-                msg.borrow_mut().pos += new_pos;
-            }
-        }
-        self.prev_screen_size = screen_size;
         self.check_keyboard_events();
 
         if self.paused {
@@ -408,7 +388,7 @@ impl State {
                 let drag_direction =
                     Vec2::new(mouse_pos.0, mouse_pos.1) - self.ui_data.selected_mouse_position;
                 if !drag_direction.is_nan() {
-                    let new_pos = node.borrow().pos + drag_direction;
+                    let new_pos = node.borrow().get_pos() + drag_direction;
                     node.borrow_mut().update_pos(new_pos);
                 }
                 self.ui_data.selected_mouse_position = Vec2::new(mouse_pos.0, mouse_pos.1);
@@ -443,7 +423,9 @@ impl State {
 
     pub fn get_msg_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, msg) in &self.travelling_messages {
-            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), msg.borrow().pos) < MESSAGE_RADIUS {
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), msg.borrow().get_pos())
+                < MESSAGE_RADIUS
+            {
                 return Some(msg.borrow().id.clone());
             }
         }
@@ -452,7 +434,8 @@ impl State {
 
     pub fn get_node_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
         for (_, node) in &self.nodes {
-            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.borrow().pos) < NODE_RADIUS {
+            if calc_dist(Vec2::new(mouse_pos.0, mouse_pos.1), node.borrow().get_pos()) < NODE_RADIUS
+            {
                 return Some(node.borrow().name.clone());
             }
         }
@@ -681,7 +664,8 @@ impl State {
                 {
                     msg.borrow_mut().set_status(MessageStatus::Dropped);
                 } else {
-                    msg.borrow_mut().update_start_pos();
+                    let start_pos = msg.borrow().src.borrow().get_pos();
+                    msg.borrow_mut().update_pos(start_pos);
                     msg.borrow_mut().set_status(MessageStatus::OnTheWay);
                     self.travelling_messages.insert(msg_id, msg);
                 }

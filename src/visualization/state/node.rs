@@ -10,7 +10,7 @@ use super::{local_message::StateLocalMessage, timer::*};
 pub struct StateNode {
     pub name: String,
     pub id: u32,
-    pub pos: Vec2,
+    pub relative_pos: Vec2,
     pub connected: bool,
     pub state: String,
     pub local_messages_sent: Vec<StateLocalMessage>,
@@ -25,10 +25,11 @@ pub struct StateNode {
 
 impl StateNode {
     pub fn new(name: String, id: u32, pos: Vec2, color: Color) -> Self {
+        let relative_pos = get_relative_pos(pos);
         Self {
             name,
             id,
-            pos,
+            relative_pos,
             color,
             connected: true,
             state: String::from(""),
@@ -43,7 +44,11 @@ impl StateNode {
     }
 
     pub fn update_pos(&mut self, new_pos: Vec2) {
-        self.pos = new_pos;
+        self.relative_pos = get_relative_pos(new_pos);
+    }
+
+    pub fn get_pos(&self) -> Vec2 {
+        get_absolute_pos(self.relative_pos)
     }
 
     pub fn update(&mut self, current_time: f64) {
@@ -64,7 +69,7 @@ impl StateNode {
     pub fn check_for_hovered_timer(&self) -> Option<StateTimer> {
         let mut hovered_timer: Option<StateTimer> = None;
         for timer in &self.timers {
-            if timer.check_hovered(self.pos) {
+            if timer.check_hovered(self.get_pos()) {
                 hovered_timer = Some(timer.clone());
                 break;
             }
@@ -73,9 +78,10 @@ impl StateNode {
     }
 
     pub fn draw(&self, show_events: bool, current_time: f64, show_timers: bool) {
+        let pos = self.get_pos();
         draw_circle(
-            self.pos.x,
-            self.pos.y,
+            pos.x,
+            pos.y,
             NODE_RADIUS,
             if self.connected {
                 self.color
@@ -87,8 +93,8 @@ impl StateNode {
         let font_size = (NODE_RADIUS * 2.0).floor() as u16;
         let text_size = measure_text(&self.name, None, font_size, 1.0);
         let text_position = Vec2::new(
-            self.pos.x - text_size.width / 2.0,
-            self.pos.y + text_size.height / 2.0,
+            pos.x - text_size.width / 2.0,
+            pos.y + text_size.height / 2.0,
         );
 
         draw_text_ex(
@@ -107,7 +113,7 @@ impl StateNode {
                 if self.timers[i].k == -1 {
                     break;
                 }
-                self.timers[i].draw(self.pos, current_time);
+                self.timers[i].draw(pos, current_time);
             }
         }
     }

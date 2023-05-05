@@ -57,23 +57,20 @@ impl EventController {
         }
 
         let mut node_cnt = 0;
+        let mut process_cnt = 0;
 
         for event in &events {
-            if let LogEntry::NodeStarted {
-                time: _,
-                node: _,
-                node_id: _,
-            } = event
-            {
-                node_cnt += 1;
-            } else {
-                break;
+            match event {
+                LogEntry::NodeStarted { .. } => node_cnt += 1,
+                LogEntry::ProcessStarted { .. } => process_cnt += 1,
+                _ => break,
             }
         }
 
         let center = Vec2::new(screen_width() / 2., screen_height() / 2.);
-        for i in 0..node_cnt {
-            let angle = (2.0 * PI / (node_cnt as f32)) * (i as f32);
+        let mut k = 0;
+        for i in 0..(node_cnt + process_cnt) {
+            let angle = (2.0 * PI / (node_cnt as f32)) * (k as f32);
             let pos = center + Vec2::from_angle(angle as f32) * CIRCLE_RADIUS;
             if let LogEntry::NodeStarted {
                 time,
@@ -89,10 +86,11 @@ impl EventController {
                         pos,
                     }),
                 ));
+                k += 1;
             }
         }
 
-        for event in events.split_off(node_cnt) {
+        for event in events.split_off(node_cnt + process_cnt) {
             match event {
                 LogEntry::NodeStarted {
                     time,

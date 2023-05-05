@@ -8,7 +8,7 @@ use super::node::*;
 #[derive(Debug, Clone)]
 pub struct StateMessage {
     pub id: String,
-    pub pos: Vec2,
+    pub relative_pos: Vec2,
     pub src: Rc<RefCell<StateNode>>,
     pub dest: Rc<RefCell<StateNode>>,
     pub tip: String,
@@ -33,10 +33,10 @@ impl StateMessage {
         time_delivered: f32,
         copies_received: u64,
     ) -> Self {
-        let pos = src.borrow().pos;
+        let relative_pos = get_relative_pos(src.borrow().get_pos());
         Self {
             id,
-            pos,
+            relative_pos,
             src,
             dest,
             tip,
@@ -50,8 +50,16 @@ impl StateMessage {
         }
     }
 
+    pub fn update_pos(&mut self, new_pos: Vec2) {
+        self.relative_pos = get_relative_pos(new_pos);
+    }
+
+    pub fn get_pos(&self) -> Vec2 {
+        get_absolute_pos(self.relative_pos)
+    }
+
     pub fn get_direction(&self) -> Vec2 {
-        self.dest.borrow().pos - self.pos
+        self.dest.borrow().get_pos() - self.get_pos()
     }
 
     pub fn get_own_speed(&self, current_time: f32) -> f32 {
@@ -71,17 +79,18 @@ impl StateMessage {
     pub fn update(&mut self, global_speed: f32, current_time: f32) {
         let direction = self.get_direction();
         let own_speed = self.get_own_speed(current_time);
-        self.pos += direction.normalize() * own_speed * global_speed;
+        self.update_pos(self.get_pos() + direction.normalize() * own_speed * global_speed);
     }
 
     pub fn update_with_jump(&mut self, global_speed: f32, current_time: f32, delta: f32) {
         let direction = self.get_direction();
         let own_speed = self.get_own_speed(current_time);
         let jump_dist = own_speed * global_speed * delta;
-        self.pos += direction.normalize() * jump_dist;
+        self.update_pos(self.get_pos() + direction.normalize() * jump_dist);
     }
 
     pub fn draw(&mut self) {
+        let pos = self.get_pos();
         let time = get_time();
         if self.is_dropped() && time - self.last_color_change >= 0.3 {
             self.drop_color = if self.drop_color == BLACK {
@@ -96,14 +105,14 @@ impl StateMessage {
         } else {
             self.src.borrow().color
         };
-        draw_circle(self.pos.x, self.pos.y, MESSAGE_RADIUS, color);
+        draw_circle(pos.x, pos.y, MESSAGE_RADIUS, color);
         if self.is_duplicated() {
             let font_size = (MESSAGE_RADIUS * 2.0).floor() as u16;
             let text = self.copies_received.to_string();
             let text_size = measure_text(&text, None, font_size, 1.0);
             let text_position = Vec2::new(
-                self.pos.x - text_size.width / 2.0,
-                self.pos.y + text_size.height / 2.0,
+                pos.x - text_size.width / 2.0,
+                pos.y + text_size.height / 2.0,
             );
 
             draw_text_ex(
@@ -128,16 +137,14 @@ impl StateMessage {
     }
 
     pub fn is_delivered(&self, current_time: f32) -> bool {
+        let pos = self.get_pos();
         if !self.is_dropped() {
-            calc_dist(self.pos, self.dest.borrow().pos) < 5.0 || current_time >= self.time_delivered
+            calc_dist(pos, self.dest.borrow().get_pos()) < 5.0
+                || current_time >= self.time_delivered
         } else {
-            let overall_dist = calc_dist(self.src.borrow().pos, self.dest.borrow().pos);
-            calc_dist(self.src.borrow().pos, self.pos) >= overall_dist * 0.25
+            let overall_dist = calc_dist(self.src.borrow().get_pos(), self.dest.borrow().get_pos());
+            calc_dist(self.src.borrow().get_pos(), pos) >= overall_dist * 0.25
         }
-    }
-
-    pub fn update_start_pos(&mut self) {
-        self.pos = self.src.borrow().pos;
     }
 
     pub fn update_status(&mut self, current_time: f32) {

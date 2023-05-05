@@ -26,6 +26,20 @@ pub fn calc_dist(a: Vec2, b: Vec2) -> f32 {
     ((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)).sqrt()
 }
 
+pub fn get_relative_pos(pos: Vec2) -> Vec2 {
+    Vec2 {
+        x: pos.x / screen_width(),
+        y: pos.y / screen_height(),
+    }
+}
+
+pub fn get_absolute_pos(relative_pos: Vec2) -> Vec2 {
+    Vec2 {
+        x: relative_pos.x * screen_width(),
+        y: relative_pos.y * screen_height(),
+    }
+}
+
 pub fn draw_circle_segment(x: f32, y: f32, r: f32, start_angle: f32, end_angle: f32, color: Color) {
     let num_segments = 100;
     let theta = (end_angle - start_angle) / num_segments as f32;
