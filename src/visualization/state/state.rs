@@ -298,9 +298,7 @@ impl State {
                 break;
             }
         }
-        for (_, node) in &mut self.nodes {
-            node.borrow_mut().update(self.current_time);
-        }
+
         self.travelling_messages.retain(|id, msg_ref| {
             let mut msg = msg_ref.borrow_mut();
             msg.update(self.global_speed, self.current_time as f32);
@@ -316,6 +314,20 @@ impl State {
                 true
             }
         });
+
+        let node_radius = self.get_node_radius();
+        let timer_radius = self.get_timer_radius();
+        for (_, node) in &mut self.nodes {
+            let hovered_timer = node.borrow_mut().update(
+                self.current_time,
+                node_radius,
+                timer_radius,
+                self.ui_data.show_timers,
+            );
+            if hovered_timer.is_some() {
+                self.ui_data.hovered_timer = hovered_timer;
+            }
+        }
     }
 
     pub fn draw(&mut self) {
@@ -418,16 +430,6 @@ impl State {
             }
             self.ui_data.selected_node = None;
         }
-        if self.ui_data.show_timers {
-            for (_, node) in &self.nodes {
-                self.ui_data.hovered_timer = node
-                    .borrow()
-                    .check_for_hovered_timer(self.get_node_radius(), self.get_timer_radius());
-                if self.ui_data.hovered_timer.is_some() {
-                    break;
-                }
-            }
-        }
     }
 
     pub fn get_msg_by_mouse_pos(&mut self, mouse_pos: (f32, f32)) -> Option<String> {
@@ -499,10 +501,11 @@ impl State {
                 .show(egui_ctx, |ui| {
                     ui.label(format!("Name: {}", timer.name));
                     ui.label(format!("Timer delay: {}", timer.delay));
-                    ui.label(format!("Time set: {}", timer.time_set));
-                    ui.label(format!("Time removed: {}", timer.time_removed));
+                    ui.label(format!("Time set: {:.7}", timer.time_set));
+                    ui.label(format!("Time removed: {:.7}", timer.time_removed));
                 });
         }
+        self.ui_data.hovered_timer = None;
     }
 
     pub fn draw_ui_node_windows(&mut self, egui_ctx: &Context) {
@@ -531,7 +534,7 @@ impl State {
                         ScrollArea::vertical().show(ui, |ui| {
                             for msg in &node.local_messages_sent {
                                 ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("Sent at: {}", msg.time));
+                                ui.label(format!("Sent at: {:.7}", msg.time));
                                 ui.label(format!("Data: {}", msg.data));
                                 ui.separator();
                             }
@@ -543,7 +546,7 @@ impl State {
                         ScrollArea::vertical().show(ui, |ui| {
                             for msg in &node.local_messages_received {
                                 ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("Received at: {}", msg.time));
+                                ui.label(format!("Received at: {:.7}", msg.time));
                                 ui.label(format!("Data: {}", msg.data));
                                 ui.separator();
                             }
@@ -557,7 +560,7 @@ impl State {
                                 let msg = self.messages.get(msg_id).unwrap().borrow();
                                 ui.label(format!("Message {}", msg.id));
                                 ui.label(format!("To: {}", msg.dest.borrow().name));
-                                ui.label(format!("Sent at: {}", msg.time_sent));
+                                ui.label(format!("Sent at: {:.7}", msg.time_sent));
                                 ui.label(format!("Status: {:?}", msg.status));
                                 ui.label(format!("Type: {}", msg.tip));
                                 ui.label(format!("Data: {}", msg.data));
@@ -573,7 +576,7 @@ impl State {
                                 let msg = self.messages.get(msg_id).unwrap().borrow();
                                 ui.label(format!("Message {}", msg.id));
                                 ui.label(format!("From: {}", msg.src.borrow().name));
-                                ui.label(format!("Received at: {}", msg.time_delivered));
+                                ui.label(format!("Received at: {:.7}", msg.time_delivered));
                                 ui.label(format!("Type: {}", msg.tip));
                                 ui.label(format!("Data: {}", msg.data));
                                 ui.separator();
@@ -586,8 +589,9 @@ impl State {
                         ScrollArea::vertical().show(ui, |ui| {
                             for timer in &node.timers {
                                 ui.label(format!("Timer {}", timer.name));
-                                ui.label(format!("Time set: {}", timer.time_set));
+                                ui.label(format!("Time set: {:.7}", timer.time_set));
                                 ui.label(format!("Delay: {}", timer.delay));
+                                ui.label(format!("Time removed: {:.7}", timer.time_removed));
                                 ui.separator();
                             }
                         });

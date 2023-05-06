@@ -5,7 +5,6 @@ pub const DEFAULT_MESSAGE_RADIUS: f32 = 5.;
 pub const CIRCLE_RADIUS: f32 = 160.;
 pub const DEFAULT_TIMER_RADIUS: f32 = 8.;
 pub const PARTITIONED_CIRCLE_RADIUS: f32 = 100.;
-pub const FPS: f32 = 60.0;
 
 pub const DEFAULT_NODE_COLOR: Color = YELLOW;
 pub const DEAD_NODE_COLOR: Color = MAROON;

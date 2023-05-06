@@ -52,15 +52,15 @@ impl StateTimer {
     pub fn draw(&self, node_pos: Vec2, state: &State) {
         let pos = self.get_position(node_pos, state.get_node_radius(), state.get_timer_radius());
         let mut color = TIMER_COLOR;
-        if state.current_time >= self.time_removed {
+        let duration = state.current_time - self.time_set;
+        if state.current_time >= self.time_removed * 0.95 {
             color = if self.time_removed < self.time_set + self.delay {
                 CANCELLED_TIMER_COLOR
             } else {
                 READY_TIMER_COLOR
             };
         }
-        let end_angle =
-            ((state.current_time - self.time_set) * 2. * (PI as f64) / self.delay) as f32 - PI / 2.;
+        let end_angle = (duration * 2. * (PI as f64) / self.delay) as f32 - PI / 2.;
         draw_circle_segment(
             pos.x,
             pos.y,

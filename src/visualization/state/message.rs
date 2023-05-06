@@ -67,9 +67,9 @@ impl StateMessage {
         let direction = self.get_direction();
         let travel_time_left = self.time_delivered - current_time;
         let mut own_speed = if !self.is_dropped() {
-            1.0 / (FPS * travel_time_left / direction.length())
+            1.0 / ((get_fps() as f32) * travel_time_left / direction.length())
         } else {
-            1.0 / (FPS * 3.0 / direction.length())
+            1.0 / ((get_fps() as f32) * 3.0 / direction.length())
         };
         if own_speed < 0. {
             own_speed = MAX_MESSAGE_SPEED;
@@ -80,6 +80,7 @@ impl StateMessage {
     pub fn update(&mut self, global_speed: f32, current_time: f32) {
         let direction = self.get_direction();
         let own_speed = self.get_own_speed(current_time);
+
         self.update_pos(self.get_pos() + direction.normalize() * own_speed * global_speed);
 
         let time = get_time();
