@@ -275,9 +275,11 @@ impl State {
     }
 
     pub fn process_state_updated(&mut self, time: f64, node: String, node_state: String) {
+        let pretty_state = prettify_json_string(node_state).replace("\\", "");
+
         self.event_queue.push_back(EventQueueItem {
             time,
-            event: StateEvent::NodeStateUpdated((node, node_state)),
+            event: StateEvent::NodeStateUpdated((node, pretty_state)),
         });
     }
 
@@ -522,7 +524,7 @@ impl State {
 
     pub fn draw_ui_network_window(&mut self, egui_ctx: &Context) {
         egui::Window::new("Network")
-            .default_pos((screen_width() * 0.8, 15.))
+            .default_pos((screen_width(), 15.))
             .show(egui_ctx, |ui| {
                 ui.set_max_height(screen_height() * 0.5);
                 ScrollArea::vertical().show(ui, |ui| {
@@ -651,8 +653,7 @@ impl State {
                 self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
             }
             StateEvent::NodeStateUpdated((node, node_state)) => {
-                self.nodes.get_mut(&node).unwrap().borrow_mut().state =
-                    prettify_json_string(node_state);
+                self.nodes.get_mut(&node).unwrap().borrow_mut().state = node_state;
             }
         }
         true
