@@ -496,14 +496,7 @@ impl State {
 
     pub fn draw_ui_hovered_timer(&mut self, egui_ctx: &Context) {
         if let Some(timer) = &self.ui_data.hovered_timer {
-            egui::Window::new("Timer")
-                .default_pos(mouse_position())
-                .show(egui_ctx, |ui| {
-                    ui.label(format!("Name: {}", timer.name));
-                    ui.label(format!("Timer delay: {}", timer.delay));
-                    ui.label(format!("Time set: {:.7}", timer.time_set));
-                    ui.label(format!("Time removed: {:.7}", timer.time_removed));
-                });
+            timer.draw_ui(egui_ctx);
         }
         self.ui_data.hovered_timer = None;
     }
@@ -511,93 +504,7 @@ impl State {
     pub fn draw_ui_node_windows(&mut self, egui_ctx: &Context) {
         for (node, show_window) in &mut self.ui_data.show_node_windows {
             let node = self.nodes.get(node).unwrap().borrow();
-            egui::Window::new(format!("Node {}", node.name))
-                .open(show_window)
-                .show(egui_ctx, |ui| {
-                    ui.label(format!(
-                        "Status: {}",
-                        if node.connected {
-                            "Connected"
-                        } else {
-                            "Disconnected"
-                        }
-                    ));
-                    ui.collapsing("State", |ui| {
-                        ui.set_max_height(screen_height() * 0.3);
-                        ScrollArea::vertical().show(ui, |ui| {
-                            ui.label(format!("{}", node.state));
-                        });
-                        ui.set_max_height(f32::INFINITY);
-                    });
-                    ui.collapsing("Sent local messages", |ui| {
-                        ui.set_max_height(screen_height() * 0.3);
-                        ScrollArea::vertical().show(ui, |ui| {
-                            for msg in &node.local_messages_sent {
-                                ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("Sent at: {:.7}", msg.time));
-                                ui.label(format!("Data: {}", msg.data));
-                                ui.separator();
-                            }
-                        });
-                        ui.set_max_height(f32::INFINITY);
-                    });
-                    ui.collapsing("Received local messages", |ui| {
-                        ui.set_max_height(screen_height() * 0.3);
-                        ScrollArea::vertical().show(ui, |ui| {
-                            for msg in &node.local_messages_received {
-                                ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("Received at: {:.7}", msg.time));
-                                ui.label(format!("Data: {}", msg.data));
-                                ui.separator();
-                            }
-                        });
-                        ui.set_max_height(f32::INFINITY);
-                    });
-                    ui.collapsing("Sent messages", |ui| {
-                        ui.set_max_height(screen_height() * 0.3);
-                        ScrollArea::vertical().show(ui, |ui| {
-                            for msg_id in &node.messages_sent {
-                                let msg = self.messages.get(msg_id).unwrap().borrow();
-                                ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("To: {}", msg.dest.borrow().name));
-                                ui.label(format!("Sent at: {:.7}", msg.time_sent));
-                                ui.label(format!("Status: {:?}", msg.status));
-                                ui.label(format!("Type: {}", msg.tip));
-                                ui.label(format!("Data: {}", msg.data));
-                                ui.separator();
-                            }
-                        });
-                        ui.set_max_height(f32::INFINITY);
-                    });
-                    ui.collapsing("Received messages", |ui| {
-                        ui.set_max_height(screen_height() * 0.3);
-                        ScrollArea::vertical().show(ui, |ui| {
-                            for msg_id in &node.messages_received {
-                                let msg = self.messages.get(msg_id).unwrap().borrow();
-                                ui.label(format!("Message {}", msg.id));
-                                ui.label(format!("From: {}", msg.src.borrow().name));
-                                ui.label(format!("Received at: {:.7}", msg.time_delivered));
-                                ui.label(format!("Type: {}", msg.tip));
-                                ui.label(format!("Data: {}", msg.data));
-                                ui.separator();
-                            }
-                        });
-                        ui.set_max_height(f32::INFINITY);
-                    });
-                    ui.collapsing("Current timers", |ui| {
-                        ui.set_max_height(screen_height() * 0.3);
-                        ScrollArea::vertical().show(ui, |ui| {
-                            for timer in &node.timers {
-                                ui.label(format!("Timer {}", timer.name));
-                                ui.label(format!("Time set: {:.7}", timer.time_set));
-                                ui.label(format!("Delay: {}", timer.delay));
-                                ui.label(format!("Time removed: {:.7}", timer.time_removed));
-                                ui.separator();
-                            }
-                        });
-                        ui.set_max_height(f32::INFINITY);
-                    });
-                });
+            node.draw_ui(egui_ctx, show_window, &self.messages);
         }
     }
 
@@ -607,17 +514,8 @@ impl State {
                 continue;
             }
             let msg = self.travelling_messages.get(msg_id).unwrap().borrow();
-            egui::Window::new(format!("Message {}", msg_id))
-                .open(show_window)
-                .show(egui_ctx, |ui| {
-                    ui.label(format!("From: {}", msg.src.borrow().id));
-                    ui.label(format!("To: {}", msg.dest.borrow().id));
-                    if msg.is_duplicated() {
-                        ui.label(format!("Duplicated {} times", msg.copies_received));
-                    }
-                    ui.label(format!("Type: {}", msg.tip));
-                    ui.label(format!("Data: {}", msg.data.clone()));
-                });
+
+            msg.draw_ui(egui_ctx, show_window);
         }
     }
 

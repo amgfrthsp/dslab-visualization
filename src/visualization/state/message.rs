@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::visualization::utilities::*;
+use egui::Context;
 use macroquad::prelude::*;
 
 use super::{node::*, state::State};
@@ -127,6 +128,20 @@ impl StateMessage {
                 },
             );
         }
+    }
+
+    pub fn draw_ui(&self, egui_ctx: &Context, show_window: &mut bool) {
+        egui::Window::new(format!("Message {}", self.id))
+            .open(show_window)
+            .show(egui_ctx, |ui| {
+                ui.label(format!("From: {}", self.src.borrow().id));
+                ui.label(format!("To: {}", self.dest.borrow().id));
+                if self.is_duplicated() {
+                    ui.label(format!("Duplicated {} times", self.copies_received));
+                }
+                ui.label(format!("Type: {}", self.tip));
+                ui.label(format!("Data: {}", self.data.clone()));
+            });
     }
 
     pub fn is_dropped(&self) -> bool {

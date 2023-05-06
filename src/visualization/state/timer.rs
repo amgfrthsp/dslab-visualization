@@ -1,5 +1,6 @@
 use std::f32::consts::PI;
 
+use egui::Context;
 use macroquad::prelude::*;
 
 use crate::visualization::utilities::*;
@@ -70,5 +71,16 @@ impl StateTimer {
             color,
         );
         draw_circle_lines(pos.x, pos.y, state.get_timer_radius(), 2., color)
+    }
+
+    pub fn draw_ui(&self, egui_ctx: &Context) {
+        egui::Window::new("Timer")
+            .default_pos(mouse_position())
+            .show(egui_ctx, |ui| {
+                ui.label(format!("Name: {}", self.name));
+                ui.label(format!("Timer delay: {}", self.delay));
+                ui.label(format!("Time set: {:.7}", self.time_set));
+                ui.label(format!("Time removed: {:.7}", self.time_removed));
+            });
     }
 }
