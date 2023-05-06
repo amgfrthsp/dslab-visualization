@@ -7,7 +7,6 @@ use std::{
 
 use egui::{Checkbox, Context, ScrollArea, Slider};
 use macroquad::prelude::*;
-use serde_json::Value;
 
 use crate::visualization::utilities::*;
 
@@ -145,7 +144,7 @@ impl State {
             Rc::clone(src_node),
             Rc::clone(self.nodes.get(dest).unwrap()),
             tip,
-            data,
+            prettify_json_string(data),
             MessageStatus::Queued,
             time as f32,
             time as f32 + duration,
@@ -176,7 +175,9 @@ impl State {
             msg_type = LocalMessageType::Received;
             event = StateEvent::LocalMessageReceived(id.clone());
         }
-        let msg = StateLocalMessage::new(id.clone(), time, node, data, msg_type);
+
+        let msg =
+            StateLocalMessage::new(id.clone(), time, node, prettify_json_string(data), msg_type);
         self.local_messages.insert(id, msg);
 
         self.event_queue.push_back(EventQueueItem { time, event });
@@ -650,9 +651,8 @@ impl State {
                 self.make_node_circle(self.ui_data.ordered_nodes.clone(), center, CIRCLE_RADIUS);
             }
             StateEvent::NodeStateUpdated((node, node_state)) => {
-                let value: Value = serde_json::from_str(&node_state).unwrap();
-                let pretty_state = serde_json::to_string_pretty(&value).unwrap();
-                self.nodes.get_mut(&node).unwrap().borrow_mut().state = pretty_state;
+                self.nodes.get_mut(&node).unwrap().borrow_mut().state =
+                    prettify_json_string(node_state);
             }
         }
         true

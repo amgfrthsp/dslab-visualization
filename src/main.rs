@@ -9,6 +9,7 @@ use visualization::{event_controller::EventController, state::state::State};
 fn window_conf() -> Conf {
     Conf {
         window_title: "Dist sys cartoon".to_owned(),
+        high_dpi: true,
         fullscreen: true,
         ..Default::default()
     }

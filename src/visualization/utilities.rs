@@ -1,4 +1,5 @@
 use macroquad::prelude::*;
+use serde_json::Value;
 
 pub const DEFAULT_NODE_RADIUS: f32 = 15.;
 pub const DEFAULT_MESSAGE_RADIUS: f32 = 5.;
@@ -38,6 +39,11 @@ pub fn get_absolute_pos(relative_pos: Vec2) -> Vec2 {
         x: relative_pos.x * screen_width(),
         y: relative_pos.y * screen_height(),
     }
+}
+
+pub fn prettify_json_string(str: String) -> String {
+    let value: Value = serde_json::from_str(&str).unwrap();
+    serde_json::to_string_pretty(&value).unwrap()
 }
 
 pub fn draw_circle_segment(x: f32, y: f32, r: f32, start_angle: f32, end_angle: f32, color: Color) {

@@ -155,7 +155,6 @@ impl StateNode {
                     ui.set_max_height(screen_height() * 0.3);
                     ScrollArea::vertical().show(ui, |ui| {
                         for msg in &self.local_messages_sent {
-                            ui.label(format!("Message {}", msg.id));
                             ui.label(format!("Sent at: {:.7}", msg.time));
                             ui.label(format!("Data: {}", msg.data));
                             ui.separator();
@@ -167,7 +166,6 @@ impl StateNode {
                     ui.set_max_height(screen_height() * 0.3);
                     ScrollArea::vertical().show(ui, |ui| {
                         for msg in &self.local_messages_received {
-                            ui.label(format!("Message {}", msg.id));
                             ui.label(format!("Received at: {:.7}", msg.time));
                             ui.label(format!("Data: {}", msg.data));
                             ui.separator();
@@ -180,7 +178,6 @@ impl StateNode {
                     ScrollArea::vertical().show(ui, |ui| {
                         for msg_id in &self.messages_sent {
                             let msg = state_messages.get(msg_id).unwrap().borrow();
-                            ui.label(format!("Message {}", msg.id));
                             ui.label(format!("To: {}", msg.dest.borrow().name));
                             ui.label(format!("Sent at: {:.7}", msg.time_sent));
                             ui.label(format!("Status: {:?}", msg.status));
@@ -196,7 +193,6 @@ impl StateNode {
                     ScrollArea::vertical().show(ui, |ui| {
                         for msg_id in &self.messages_received {
                             let msg = state_messages.get(msg_id).unwrap().borrow();
-                            ui.label(format!("Message {}", msg.id));
                             ui.label(format!("From: {}", msg.src.borrow().name));
                             ui.label(format!("Received at: {:.7}", msg.time_delivered));
                             ui.label(format!("Type: {}", msg.tip));
