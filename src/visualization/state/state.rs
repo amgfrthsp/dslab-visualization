@@ -354,6 +354,7 @@ impl State {
     }
 
     pub fn check_keyboard_events(&mut self) {
+        let abs_time = get_time();
         if is_key_pressed(KeyCode::Space) {
             self.paused = !self.paused;
         }
@@ -405,10 +406,10 @@ impl State {
             }
         }
         if is_mouse_button_pressed(MouseButton::Left) {
-            self.ui_data.last_clicked = self.current_time;
+            self.ui_data.last_clicked = abs_time;
         }
-        if is_mouse_button_released(MouseButton::Left) {
-            if self.current_time - self.ui_data.last_clicked <= SINGLE_CLICK_DELAY
+        if !is_mouse_button_pressed(MouseButton::Left) && !is_mouse_button_down(MouseButton::Left) {
+            if abs_time - self.ui_data.last_clicked <= SINGLE_CLICK_DELAY
                 && self.ui_data.selected_node.is_some()
             {
                 self.ui_data

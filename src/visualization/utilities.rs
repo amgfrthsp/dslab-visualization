@@ -19,7 +19,7 @@ pub const SCALE_COEF_DELTA: f32 = 0.05;
 pub const MAX_MESSAGE_SPEED: f32 = 30.;
 pub const DEFAULT_GLOBAL_SPEED: f32 = 0.001;
 
-pub const SINGLE_CLICK_DELAY: f64 = 0.03;
+pub const SINGLE_CLICK_DELAY: f64 = 0.12;
 
 pub const TIMERS_MAX_NUMBER: usize = 9;
 
