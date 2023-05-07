@@ -347,7 +347,7 @@ impl State {
             let src = &msg_borrowed.src.borrow().name.clone();
             let dest = &msg_borrowed.dest.borrow().name.clone();
             let show_message = *self.ui_data.show_events_for_node.get(src).unwrap()
-                || *self.ui_data.show_events_for_node.get(dest).unwrap();
+                && *self.ui_data.show_events_for_node.get(dest).unwrap();
             if show_message {
                 msg_borrowed.draw(&self);
             }
