@@ -1,0 +1,18 @@
+{"NodeStarted":{"time":0.0,"node":"server-node","node_id":1}}
+{"NodeStarted":{"time":0.0,"node":"client-node","node_id":2}}
+{"ProcessStarted":{"time":0.0,"node":"server-node","proc":"server"}}
+{"ProcessStarted":{"time":0.0,"node":"client-node","proc":"client"}}
+{"LocalMessageReceived":{"time":0.0,"msg_id":"client-node-client-0","node":"client-node","proc":"client","msg":{"tip":"PING","data":"{\"value\": \"Hello0!\"}"}}}
+{"MessageSent":{"time":0.0,"msg_id":"0","src_node":"client-node","src_proc":"client","dest_node":"server-node","dest_proc":"server","msg":{"tip":"PING","data":"{\"value\": \"Hello0!\"}"}}}
+{"MessageReceived":{"time":1.0092994785803933,"msg_id":"0"}}
+{"MessageSent":{"time":1.0092994785803933,"msg_id":"1","src_node":"server-node","src_proc":"server","dest_node":"client-node","dest_proc":"client","msg":{"tip":"PONG","data":"{\"value\": \"Hello0!\"}"}}}
+{"ProcessStateUpdated":{"time":1.0092994785803933,"node":"server-node","proc":"0","state":"{}"}}
+{"MessageReceived":{"time":2.3121069546558592,"msg_id":"1"}}
+{"LocalMessageSent":{"time":2.3121069546558592,"msg_id":"client-node-client-1","node":"client-node","proc":"client","msg":{"tip":"PONG","data":"{\"value\": \"Hello0!\"}"}}}
+{"ProcessStateUpdated":{"time":2.3121069546558592,"node":"client-node","proc":"0","state":"{}"}}
+{"LocalMessageReceived":{"time":2.3121069546558592,"msg_id":"client-node-client-2","node":"client-node","proc":"client","msg":{"tip":"PING","data":"{\"value\": \"Hello1!\"}"}}}
+{"MessageSent":{"time":2.3121069546558592,"msg_id":"2","src_node":"client-node","src_proc":"client","dest_node":"server-node","dest_proc":"server","msg":{"tip":"PING","data":"{\"value\": \"Hello1!\"}"}}}
+{"MessageReceived":{"time":4.131071590136219,"msg_id":"2"}}
+{"MessageSent":{"time":4.131071590136219,"msg_id":"3","src_node":"server-node","src_proc":"server","dest_node":"client-node","dest_proc":"client","msg":{"tip":"PONG","data":"{\"value\": \"Hello1!\"}"}}}
+{"MessageDropped":{"time":4.131071590136219,"msg_id":"3"}}
+{"ProcessStateUpdated":{"time":4.131071590136219,"node":"server-node","proc":"0","state":"{}"}}
