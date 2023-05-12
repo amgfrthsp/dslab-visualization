@@ -71,10 +71,12 @@ pub struct State {
     pub disabled_links: HashSet<(String, String)>,
     pub partition: Option<(Vec<String>, Vec<String>)>,
     pub scale_coef: f32,
+    pub start_time: f64,
 }
 
 impl State {
     pub fn new() -> Self {
+        let start_time = get_time();
         Self {
             nodes: HashMap::new(),
             travelling_messages: HashMap::new(),
@@ -105,6 +107,7 @@ impl State {
                 WHITE, MAGENTA,
             ]),
             scale_coef: 1.,
+            start_time,
         }
     }
 
@@ -144,7 +147,7 @@ impl State {
             Rc::clone(src_node),
             Rc::clone(self.nodes.get(dest).unwrap()),
             tip,
-            prettify_json_string(data),
+            data,
             MessageStatus::Queued,
             time as f32,
             time as f32 + duration,
@@ -176,8 +179,7 @@ impl State {
             event = StateEvent::LocalMessageReceived(id.clone());
         }
 
-        let msg =
-            StateLocalMessage::new(id.clone(), time, node, prettify_json_string(data), msg_type);
+        let msg = StateLocalMessage::new(id.clone(), time, node, data, msg_type);
         self.local_messages.insert(id, msg);
 
         self.event_queue.push_back(EventQueueItem { time, event });
@@ -275,18 +277,16 @@ impl State {
     }
 
     pub fn process_state_updated(&mut self, time: f64, node: String, node_state: String) {
-        let pretty_state = prettify_json_string(node_state).replace("\\", "");
-
         self.event_queue.push_back(EventQueueItem {
             time,
-            event: StateEvent::NodeStateUpdated((node, pretty_state)),
+            event: StateEvent::NodeStateUpdated((node, node_state)),
         });
     }
 
     pub fn update(&mut self) {
         self.check_keyboard_events();
 
-        if self.paused {
+        if self.paused || get_time() - self.start_time < 1. {
             self.last_updated = get_time();
             return;
         } else {
@@ -423,16 +423,17 @@ impl State {
             }
             self.ui_data.selected_node = None;
         }
-
-        let node_radius = self.get_node_radius();
-        let timer_radius = self.get_timer_radius();
-        for (_, node) in &self.nodes {
-            let hovered_timer = node
-                .borrow()
-                .check_for_hovered_timer(node_radius, timer_radius);
-            if hovered_timer.is_some() {
-                self.ui_data.hovered_timer = hovered_timer;
-                break;
+        if self.ui_data.show_timers {
+            let node_radius = self.get_node_radius();
+            let timer_radius = self.get_timer_radius();
+            for (_, node) in &self.nodes {
+                let hovered_timer = node
+                    .borrow()
+                    .check_for_hovered_timer(node_radius, timer_radius);
+                if hovered_timer.is_some() {
+                    self.ui_data.hovered_timer = hovered_timer;
+                    break;
+                }
             }
         }
     }

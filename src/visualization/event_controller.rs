@@ -7,7 +7,7 @@ use std::{collections::HashMap, f32::consts::PI};
 use crate::logs::log_entities::*;
 
 use super::state::state::State;
-use super::utilities::CIRCLE_RADIUS;
+use super::utilities::{prettify_json_string, CIRCLE_RADIUS};
 
 #[derive(Debug)]
 pub enum ControllerStateCommand {
@@ -122,7 +122,7 @@ impl EventController {
                         node,
                         proc,
                         tip: msg.tip,
-                        data: msg.data,
+                        data: prettify_json_string(msg.data),
                         time,
                         msg_type: LocalMessageType::Sent,
                     };
@@ -266,9 +266,10 @@ impl EventController {
                     proc: _,
                     state,
                 } => {
+                    let pretty_state = prettify_json_string(state).replace("\\", "");
                     self.commands.push((
                         time,
-                        ControllerStateCommand::NodeStateUpdated((node, state)),
+                        ControllerStateCommand::NodeStateUpdated((node, pretty_state)),
                     ));
                 }
             }
@@ -290,7 +291,7 @@ impl EventController {
                         &msg.src_node,
                         &msg.dest_node,
                         msg.tip.clone(),
-                        msg.data.clone(),
+                        prettify_json_string(msg.data.clone()),
                         (msg.time_received - msg.time_sent) as f32,
                         msg.copies_received,
                     );
