@@ -318,18 +318,8 @@ impl State {
             }
         });
 
-        let node_radius = self.get_node_radius();
-        let timer_radius = self.get_timer_radius();
         for (_, node) in &mut self.nodes {
-            let hovered_timer = node.borrow_mut().update(
-                self.current_time,
-                node_radius,
-                timer_radius,
-                self.ui_data.show_timers,
-            );
-            if hovered_timer.is_some() {
-                self.ui_data.hovered_timer = hovered_timer;
-            }
+            node.borrow_mut().update(self.current_time);
         }
     }
 
@@ -432,6 +422,18 @@ impl State {
                     .insert(self.ui_data.selected_node.clone().unwrap(), true);
             }
             self.ui_data.selected_node = None;
+        }
+
+        let node_radius = self.get_node_radius();
+        let timer_radius = self.get_timer_radius();
+        for (_, node) in &self.nodes {
+            let hovered_timer = node
+                .borrow()
+                .check_for_hovered_timer(node_radius, timer_radius);
+            if hovered_timer.is_some() {
+                self.ui_data.hovered_timer = hovered_timer;
+                break;
+            }
         }
     }
 

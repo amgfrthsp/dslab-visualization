@@ -56,15 +56,7 @@ impl StateNode {
         get_absolute_pos(self.relative_pos)
     }
 
-    pub fn update(
-        &mut self,
-        current_time: f64,
-        node_radius: f32,
-        timer_radius: f32,
-        show_timers: bool,
-    ) -> Option<StateTimer> {
-        let pos = self.get_pos();
-        let mut hovered_timer: Option<StateTimer> = None;
+    pub fn update(&mut self, current_time: f64) {
         for timer in &mut self.timers {
             if timer.k == -1 {
                 if !self.free_timer_slots.is_empty() {
@@ -74,13 +66,22 @@ impl StateNode {
             } else if current_time >= timer.time_removed {
                 self.free_timer_slots.push_back(timer.k as usize);
             }
-            if show_timers && timer.check_hovered(pos, node_radius, timer_radius) {
-                hovered_timer = Some(timer.clone());
-            }
         }
         self.timers
             .retain(|timer| current_time < timer.time_removed);
+    }
 
+    pub fn check_for_hovered_timer(
+        &self,
+        node_radius: f32,
+        timer_radius: f32,
+    ) -> Option<StateTimer> {
+        let mut hovered_timer: Option<StateTimer> = None;
+        for timer in &self.timers {
+            if timer.check_hovered(self.get_pos(), node_radius, timer_radius) {
+                hovered_timer = Some(timer.clone());
+            }
+        }
         hovered_timer
     }
 

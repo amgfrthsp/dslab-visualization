@@ -74,8 +74,9 @@ impl StateTimer {
     }
 
     pub fn draw_ui(&self, egui_ctx: &Context) {
-        egui::Window::new("Timer")
-            .default_pos(mouse_position())
+        let default_pos = (screen_width() * 0.8, screen_height() * 0.8);
+        egui::Window::new(format!("Timer {}", self.id))
+            .default_pos(default_pos)
             .show(egui_ctx, |ui| {
                 ui.label(format!("Name: {}", self.name));
                 ui.label(format!("Timer delay: {}", self.delay));
